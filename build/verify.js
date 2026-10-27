@@ -19,7 +19,7 @@ new vm.Script(scripts[2]);                       // app.js must at least parse
 var cards = X21.loadCards(csv[1]), ok = cards.length === 54;
 console.log("EMBEDDED BUILD CHECK (from final HTML)");
 console.log(" cards: " + cards.length);
-["mental", "linear"].forEach(function (cat) {
+["mental", "linear", "all"].forEach(function (cat) {
   Object.keys(T.RAMPS).forEach(function (diff) {
     var qs = T.makeRound(cat, { diff: diff, seed: 2026, cards: cards });
     var right = qs.filter(function (q) { return T.isRight(q, q.answer); }).length;

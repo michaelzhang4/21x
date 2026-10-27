@@ -701,13 +701,15 @@
     standard: [1, 1, 1, 2, 2, 2, 2, 3, 3, 3],
     spicy:    [1, 2, 2, 2, 3, 3, 3, 3, 3, 3]
   };
+  // cat: "mental", "linear" or "all" (both lists together)
   // opts: {diff, seed, cards (the 21X deck), types (the template types switched on; default all)}
   // Every chosen type comes up once before any repeats, a question takes the ramp's tier when its
   // type has that tier (else the nearest it has), and the round is ordered easiest first.
   function makeRound(cat, opts) {
     opts = opts || {};
     var r = mulberry32(opts.seed), ramp = RAMPS[opts.diff] || RAMPS.standard, ctx = { cards: opts.cards || [] };
-    var pool = CATS[cat].list.filter(function (t) {
+    var list = cat === "all" ? MENTAL.concat(LINEAR) : CATS[cat].list;
+    var pool = list.filter(function (t) {
       return (!opts.types || opts.types.indexOf(t.type) >= 0) && (t.type !== "x21" || ctx.cards.length);
     });
     if (!pool.length) return [];

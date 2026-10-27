@@ -3,13 +3,13 @@
 **▶ Live: [michaelzhang4.github.io/21x](https://michaelzhang4.github.io/21x/)**
 
 A phone-friendly, **single-file** web app for getting your head into gear on the morning
-train: rounds of ten **Mental maths** or **Linear algebra** questions, each with a timer and
-a score. Nothing is tracked.
+train: tap **Start** for a round of ten questions, mixing mental maths, linear algebra and
+21X hands, each round with a timer and a score. Nothing is tracked.
 
 ## How a round works
 
-- Each round is ten questions picked at random from the question types you've switched on
-  (see below). They start with warm-ups and get harder, and every round is new.
+- Each round is ten questions picked at random from all the question types you've switched
+  on, in either section (see below). They start with warm-ups and get harder, and every round is new.
 - Every answer is a whole number. Type it on the built-in keypad (with **±** for negatives) and submit.
 - Your **score** is how many you get right. Your **time** is the total time spent answering:
   the clock only runs while a question is waiting for you.

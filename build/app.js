@@ -23,10 +23,11 @@
   function saveSettings() { save("settings", S); }
   function typesIn(cat) { return T.CATS[cat].list.filter(function (t) { return t.type !== "x21" || CARDS.length; }); }
   function typesOn(cat) { return typesIn(cat).filter(function (t) { return S.off.indexOf(t.type) < 0; }); }
+  function allOn() { return CATS.reduce(function (a, c) { return a.concat(typesOn(c)); }, []); }
 
   var CAT_INFO = {
-    mental: { name: "Mental maths", blurb: "Arithmetic, percentages, squares and shortcuts" },
-    linear: { name: "Linear algebra", blurb: "Equations, vectors, matrices and 21X hands" }
+    mental: { name: "Mental maths" },
+    linear: { name: "Linear algebra" }
   };
   var DIFF_INFO = {
     gentle: { name: "Gentle", note: "Six warm-ups, then four medium questions." },
@@ -76,14 +77,15 @@
   function stopClock() { if (raf) cancelAnimationFrame(raf); raf = 0; clock.run = false; clock.paused = false; }
 
   /* ============================ a round ============================ */
-  // cur: {cat, diff, qs, i, answers: [{v, ok, ms}], input, phase: "ask"|"ok"|"fb"}. It lives only in memory.
+  // cur: {diff, qs, i, answers: [{v, ok, ms}], input, phase: "ask"|"ok"|"fb"}. It lives only in memory.
+  // A round draws from every type switched on, mental maths and linear algebra alike.
   var cur = null;
-  function startRound(cat) {
-    var types = typesOn(cat);
-    if (!types.length) { toast("Switch on some " + CAT_INFO[cat].name.toLowerCase() + " questions in Settings first"); return; }
+  function startRound() {
+    var types = allOn();
+    if (!types.length) { toast("Switch on some questions in Settings first"); return; }
     endRound();
-    var qs = T.makeRound(cat, { diff: S.diff, seed: seed(), cards: CARDS, types: types.map(function (t) { return t.type; }) });
-    cur = { cat: cat, diff: S.diff, qs: qs, i: 0, answers: [], input: "", phase: "ask" };
+    var qs = T.makeRound("all", { diff: S.diff, seed: seed(), cards: CARDS, types: types.map(function (t) { return t.type; }) });
+    cur = { diff: S.diff, qs: qs, i: 0, answers: [], input: "", phase: "ask" };
     startClock();
     renderPlay();
     ask();
@@ -157,7 +159,7 @@
   }
   function renderPlay() {
     app.innerHTML = '<div class="game" id="g"><div class="bar"><button class="ib" data-act="pause" aria-label="Pause">❚❚</button>' +
-      '<span class="ttl">' + CAT_INFO[cur.cat].name + '</span><span class="sp"></span>' +
+      '<span class="ttl">' + DIFF_INFO[cur.diff].name + ' round</span><span class="sp"></span>' +
       '<span class="chip">⏱ <span id="g-clock">' + fmtTime(clock.t) + '</span></span><button class="skip" id="g-skip" data-act="skip">Skip</button></div>' +
       '<span id="g-line"></span>' +
       '<div class="stage" id="g-stage"><div class="qp" id="g-prompt"></div><div class="qx" id="g-q"></div><div class="fbk" id="g-fb" aria-live="polite"></div></div>' +
@@ -250,33 +252,31 @@
   }
   function resultsScreen(r) {
     window.scrollTo(0, 0);
-    var score = scoreOf(r.answers), ms = timeOf(r.answers), other = r.cat === "mental" ? "linear" : "mental";
-    app.innerHTML = '<div class="menu">' + topBar(CAT_INFO[r.cat].name) +
+    var score = scoreOf(r.answers), ms = timeOf(r.answers);
+    app.innerHTML = '<div class="menu">' + topBar("Results") +
       '<p class="note" style="margin:-6px 0 14px">' + DIFF_INFO[r.diff].name + " · not saved anywhere</p>" +
       lineHtml(r.answers, T.ROUND, true) +
       '<div class="score"><div><b>' + score + '<span class="dim">/' + T.ROUND + "</span></b><small>correct</small></div><div><b>" + fmtTime(ms) + "</b><small>" +
       fmtSec(ms / Math.max(1, r.answers.length)) + " per question</small></div></div>" +
       (score === T.ROUND ? '<div class="verdict good">Perfect round!</div>' : "") +
-      '<div class="btns"><button class="btn" data-act="play" data-arg="' + r.cat + '">Another round</button>' +
-      (typesOn(other).length ? '<button class="btn gold" data-act="play" data-arg="' + other + '">' + CAT_INFO[other].name + " ›</button>" :
-        '<button class="btn gold" data-act="home">Home</button>') + "</div>" +
+      '<div class="btns"><button class="btn" data-act="home">Home</button><button class="btn gold" data-act="play">Another round ›</button></div>' +
       '<div class="sect" style="padding-bottom:4px"><h3>Review</h3>' + reviewList(r) + "</div></div>";
   }
 
   /* ============================ menu screens ============================ */
   function topBar(title) { return '<div class="top"><button class="ib" data-act="home" aria-label="Back">‹</button><h2>' + title + "</h2></div>"; }
-  function roundCard(cat) {
-    var on = typesOn(cat), all = typesIn(cat).length;
+  function roundCard() {
+    var on = allOn(), all = CATS.reduce(function (n, c) { return n + typesIn(c).length; }, 0);
     var sub = !on.length ? '<span class="warn">Nothing switched on: pick some questions in Settings</span>' :
-      on.length === all ? CAT_INFO[cat].blurb :
+      on.length === all ? "Mental maths, linear algebra and 21X hands" :
       on.length <= 3 ? on.map(function (t) { return esc(t.label); }).join(", ") : on.length + " of " + all + " question types";
-    return '<button class="day" data-act="play" data-arg="' + cat + '"><span class="dh"><b>' + CAT_INFO[cat].name +
-      '</b><span class="st hl">Start ›</span></span><small>' + sub + "</small>" + lineHtml([], -1) + "</button>";
+    return '<button class="day" data-act="play"><span class="dh"><b>Start</b><span class="st hl">10 questions ›</span></span><small>' +
+      sub + "</small>" + lineHtml([], -1) + "</button>";
   }
   function homeScreen() {
     app.innerHTML = '<div class="menu"><div class="logo">Train of <i>Thought</i></div><div class="tag">Ten questions a round, picked at random from the types you choose.</div>' +
       (LOAD_ERR ? '<div class="err">Card list error: ' + esc(LOAD_ERR) + ". The 21X hands are switched off.</div>" : "") +
-      CATS.map(roundCard).join("") +
+      roundCard() +
       '<div class="btns"><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="help">How it works</button></div>' +
       '<div class="foot">' + DIFF_INFO[S.diff].name + " difficulty · nothing is tracked</div></div>";
   }
@@ -296,11 +296,12 @@
       '<div class="chips">' + list.map(function (t) {
         var isOn = S.off.indexOf(t.type) < 0;
         return '<button class="chipt' + (isOn ? " on" : "") + '" data-act="type" data-arg="' + t.type + '" aria-pressed="' + isOn + '">' + esc(t.label) + "</button>";
-      }).join("") + "</div>" + (on ? "" : '<p class="note warn">Switch on at least one to play this round.</p>') + "</div>";
+      }).join("") + "</div></div>";
   }
   function settingsScreen() {
     app.innerHTML = '<div class="menu">' + topBar("Settings") +
-      '<p class="note" style="margin-top:-4px">Each round picks 10 questions at random from the types switched on here.</p>' +
+      '<p class="note" style="margin-top:-4px">Each round picks 10 questions at random from all the types switched on here, across both sections.</p>' +
+      (allOn().length ? "" : '<p class="note warn">Switch on at least one question type to play.</p>') +
       CATS.map(typeSection).join("") +
       '<div class="sect"><h3>Difficulty</h3>' + seg("diff", [["gentle", "Gentle"], ["standard", "Standard"], ["spicy", "Spicy"]], S.diff) +
       '<p class="note">' + DIFF_INFO[S.diff].note + " A few types only come in a hard version (like eigenvalues) or an easy one (like doubling). " +
@@ -311,7 +312,7 @@
   function helpScreen() {
     function li(a) { return "<ul>" + a.map(function (s) { return "<li>" + s + "</li>"; }).join("") + "</ul>"; }
     app.innerHTML = '<div class="menu">' + topBar("How it works") +
-      '<div class="sect"><h3>Rounds</h3><p>Tap <b>Mental maths</b> or <b>Linear algebra</b> for ten questions, picked at random from the question types you\'ve switched on in ' +
+      '<div class="sect"><h3>Rounds</h3><p>Tap <b>Start</b> for ten questions, picked at random from every question type you\'ve switched on in ' +
       "Settings. They start easy and get harder, and every round is new.</p>" +
       "<p>The clock only runs while a question is waiting for your answer. Your score is how many you get right, and your time is the total. " +
       "Nothing is kept once you leave the results.</p></div>" +
@@ -347,7 +348,7 @@
     home: function () { go("home"); },
     settings: function () { go("settings"); },
     help: function () { go("help"); },
-    play: function (cat) { startRound(cat); },
+    play: function () { startRound(); },
     pause: pause,
     resume: resume,
     key: pressKey,

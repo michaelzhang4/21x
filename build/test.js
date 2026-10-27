@@ -342,6 +342,22 @@ test("picked types only: each one comes up, shared evenly, easiest first", funct
       }
     });
   });
+  var both = T.MENTAL.concat(T.LINEAR);
+  Object.keys(T.RAMPS).forEach(function (diff) {
+    for (var s = 0; s < 150; s++) {
+      var types = T.shuffle(both.map(function (t) { return t.type; }), rng).slice(0, 1 + Math.floor(rng() * 20));
+      var qs = T.makeRound("all", { diff: diff, seed: seedOf("all" + diff + s), cards: CARDS, types: types }), seen = {};
+      assert.strictEqual(qs.length, T.ROUND);
+      qs.forEach(function (q, i) {
+        assert.ok(types.indexOf(q.type) >= 0, "only picked types: " + q.type + " not in " + types);
+        if (i) assert.ok(q.tier >= qs[i - 1].tier, "easiest first");
+        seen[q.type] = true;
+      });
+      if (types.length <= T.ROUND) types.forEach(function (t) { assert.ok(seen[t], t + " was picked but never came up in a mixed round"); });
+    }
+  });
+  var mix = T.makeRound("all", { diff: "standard", seed: 11, cards: CARDS, types: ["add", "eig"] });
+  assert.ok(mix.some(function (q) { return q.type === "add"; }) && mix.some(function (q) { return q.type === "eig"; }), "a mixed round draws from both lists");
   var eig = T.makeRound("linear", { diff: "gentle", seed: 3, types: ["eig"] });
   assert.ok(eig.length === T.ROUND && eig.every(function (q) { return q.type === "eig" && q.tier === 3; }), "a hard-only type still fills a gentle round");
   assert.deepStrictEqual(T.makeRound("linear", { seed: 1, cards: CARDS, types: [] }), [], "nothing picked, no round");
