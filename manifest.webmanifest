@@ -1,7 +1,7 @@
 {
   "name": "Train of Thought",
   "short_name": "Train of Thought",
-  "description": "Ten mental maths and ten linear algebra questions a day, with a timer and a score.",
+  "description": "Rounds of ten mental maths or linear algebra questions, with a timer and a score. Nothing is tracked.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

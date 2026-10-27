@@ -1,10 +1,10 @@
-/* Train of Thought - question generators, daily rounds, streaks (no DOM).
+/* Train of Thought - question generators and rounds (no DOM).
    Used both by the Node test harness and inlined into the final HTML. */
 (function (global) {
   "use strict";
   var X21 = global.X21 || require("./cards.js");
 
-  var ROUND = 10, GEN = "tot1";          // bump GEN when generators change (it reseeds every daily set)
+  var ROUND = 10;
   var M = "−";
 
   /* ============================ RNG ============================ */
@@ -17,11 +17,6 @@
       t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
-  }
-  function hashStr(s) {                     // FNV-1a
-    var h = 0x811c9dc5;
-    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
-    return h >>> 0;
   }
   function ri(r, a, b) { return a + Math.floor(r() * (b - a + 1)); }
   function pick(r, arr) { return arr[Math.floor(r() * arr.length)]; }
@@ -685,9 +680,20 @@
   });
 
   /* ============================ rounds ============================ */
+  // the names shown in Settings, where you pick which question types go into a round
+  var LABELS = {
+    add: "Addition", sub: "Subtraction", mul: "Multiplication", div: "Division", sq: "Squares", sqrt: "Square roots",
+    pct: "Percentages", frac: "Fractions of amounts", ops: "Order of operations", near: "Multiplication shortcuts",
+    pow: "Powers", series: "Series sums", mod: "Remainders", neg: "Negative numbers", mean: "Averages", half: "Doubling and halving",
+    lin1: "Linear equations", lin2: "Two-sided equations", sys: "Simultaneous equations", line: "Slopes and linear functions",
+    sing: "Singular matrices", x21: "21X hands", dot: "Dot products", comb: "Linear combinations", det2: "2×2 determinants",
+    det3: "3×3 determinants", matvec: "Matrix × vector", matmul: "Matrix products", trace: "Trace", eig: "Eigenvalues",
+    inv: "Inverses", norm: "Vector lengths", cross: "Cross products", detprop: "Determinant rules"
+  };
+  MENTAL.concat(LINEAR).forEach(function (t) { t.label = LABELS[t.type]; });
   var CATS = {
-    mental: { name: "Mental maths", list: MENTAL, required: [] },
-    linear: { name: "Linear algebra", list: LINEAR, required: ["x21"] }      // every linear round has one 21X hand
+    mental: { name: "Mental maths", list: MENTAL },
+    linear: { name: "Linear algebra", list: LINEAR }
   };
   // the tier each of the 10 questions is drawn from: a warm-up, then harder
   var RAMPS = {
@@ -695,27 +701,28 @@
     standard: [1, 1, 1, 2, 2, 2, 2, 3, 3, 3],
     spicy:    [1, 2, 2, 2, 3, 3, 3, 3, 3, 3]
   };
-  // ctx: {cards} (the 21X deck; without it the 21X hand question is left out)
-  function makeRound(cat, diff, seed, ctx) {
-    ctx = ctx || {};
-    var r = mulberry32(seed), C = CATS[cat], ramp = RAMPS[diff] || RAMPS.standard;
-    var pool = C.list.filter(function (t) { return t.type !== "x21" || (ctx.cards && ctx.cards.length); });
-    var slots = ramp.map(function (tier) { return { tier: tier, tpl: null }; }), used = {}, fams = {};
-    function take(s, tpl) { s.tpl = tpl; used[tpl.type] = true; fams[tpl.fam] = (fams[tpl.fam] || 0) + 1; }
-    C.required.forEach(function (type) {
-      var tpl = pool.filter(function (t) { return t.type === type; })[0];
-      if (!tpl) return;
-      var open = slots.filter(function (s) { return tpl.tiers.indexOf(s.tier) >= 0; });
-      if (open.length) take(pick(r, open), tpl);
+  // opts: {diff, seed, cards (the 21X deck), types (the template types switched on; default all)}
+  // Every chosen type comes up once before any repeats, a question takes the ramp's tier when its
+  // type has that tier (else the nearest it has), and the round is ordered easiest first.
+  function makeRound(cat, opts) {
+    opts = opts || {};
+    var r = mulberry32(opts.seed), ramp = RAMPS[opts.diff] || RAMPS.standard, ctx = { cards: opts.cards || [] };
+    var pool = CATS[cat].list.filter(function (t) {
+      return (!opts.types || opts.types.indexOf(t.type) >= 0) && (t.type !== "x21" || ctx.cards.length);
     });
-    slots.forEach(function (s) {
-      if (s.tpl) return;
-      var fit = pool.filter(function (t) { return t.tiers.indexOf(s.tier) >= 0; });
-      var fresh = fit.filter(function (t) { return !used[t.type]; });
-      if (fresh.length) fit = fresh;
-      var least = Math.min.apply(null, fit.map(function (t) { return fams[t.fam] || 0; }));   // keep the topics mixed
-      take(s, pick(r, fit.filter(function (t) { return (fams[t.fam] || 0) === least; })));
+    if (!pool.length) return [];
+    var used = {}, fams = {}, slots = [];
+    ramp.forEach(function (tier, k) {
+      var fresh = pool.filter(function (t) { return !used[t.type]; });
+      if (!fresh.length) { used = {}; fresh = pool.slice(); }
+      var fit = fresh.filter(function (t) { return t.tiers.indexOf(tier) >= 0; });
+      if (fit.length) fresh = fit;
+      var least = Math.min.apply(null, fresh.map(function (t) { return fams[t.fam] || 0; }));   // keep the topics mixed
+      var tpl = pick(r, fresh.filter(function (t) { return (fams[t.fam] || 0) === least; }));
+      used[tpl.type] = true; fams[tpl.fam] = (fams[tpl.fam] || 0) + 1;
+      slots.push({ tpl: tpl, k: k, tier: Math.min(tpl.tiers[tpl.tiers.length - 1], Math.max(tpl.tiers[0], tier)) });
     });
+    slots.sort(function (a, b) { return a.tier - b.tier || a.k - b.k; });
     return slots.map(function (s, k) {
       var q = s.tpl.gen(r, s.tier, ctx);
       q.type = s.tpl.type; q.fam = s.tpl.fam; q.tier = s.tier; q.n = k + 1;
@@ -725,34 +732,9 @@
   }
   function isRight(q, val) { return typeof val === "number" && (q.check ? q.check(val) : val === q.answer); }
 
-  /* ============================ days & streaks ============================ */
-  function pad2(n) { return (n < 10 ? "0" : "") + n; }
-  function dayKey(d) { d = d || new Date(); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
-  function keyDate(k) { var p = k.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
-  function addDays(k, n) { var d = keyDate(k); d.setDate(d.getDate() + n); return dayKey(d); }
-  // everyone gets the same 10 questions for a given day, category and difficulty
-  function dailySeed(k, cat, diff) { return hashStr(GEN + "|" + k + "|" + cat + "|" + diff); }
-  // days: {"2026-10-27": {mental: record, linear: record}}; a day counts once any daily round is done
-  function played(day) { return !!day && Object.keys(day).length > 0; }
-  function streak(days, today) {
-    var k = played(days[today]) ? today : addDays(today, -1), n = 0;
-    while (played(days[k])) { n++; k = addDays(k, -1); }
-    return n;
-  }
-  function bestStreak(days) {
-    var best = 0, run = 0, prev = null;
-    Object.keys(days).filter(function (k) { return played(days[k]); }).sort().forEach(function (k) {
-      run = prev && addDays(prev, 1) === k ? run + 1 : 1;
-      best = Math.max(best, run); prev = k;
-    });
-    return best;
-  }
-
   var api = {
-    ROUND: ROUND, GEN: GEN, CATS: CATS, RAMPS: RAMPS, MENTAL: MENTAL, LINEAR: LINEAR,
-    mulberry32: mulberry32, hashStr: hashStr, shuffle: shuffle, det3v: det3v,
-    makeRound: makeRound, isRight: isRight,
-    dayKey: dayKey, keyDate: keyDate, addDays: addDays, dailySeed: dailySeed, played: played, streak: streak, bestStreak: bestStreak
+    ROUND: ROUND, CATS: CATS, RAMPS: RAMPS, MENTAL: MENTAL, LINEAR: LINEAR, LABELS: LABELS,
+    mulberry32: mulberry32, shuffle: shuffle, det3v: det3v, makeRound: makeRound, isRight: isRight
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.TOT = api;

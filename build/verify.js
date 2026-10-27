@@ -16,18 +16,21 @@ vm.runInContext(scripts[1], sandbox);
 var X21 = sandbox.window.X21, T = sandbox.window.TOT;
 new vm.Script(scripts[2]);                       // app.js must at least parse
 
-var cards = X21.loadCards(csv[1]), ctx = { cards: cards }, day = "2026-10-27", ok = cards.length === 54;
+var cards = X21.loadCards(csv[1]), ok = cards.length === 54;
 console.log("EMBEDDED BUILD CHECK (from final HTML)");
 console.log(" cards: " + cards.length);
 ["mental", "linear"].forEach(function (cat) {
   Object.keys(T.RAMPS).forEach(function (diff) {
-    var qs = T.makeRound(cat, diff, T.dailySeed(day, cat, diff), ctx);
+    var qs = T.makeRound(cat, { diff: diff, seed: 2026, cards: cards });
     var right = qs.filter(function (q) { return T.isRight(q, q.answer); }).length;
     ok = ok && qs.length === 10 && right === 10;
     console.log(" " + cat + "/" + diff + ": " + qs.length + " questions, " + right + " self-checked · " + qs.map(function (q) { return q.type; }).join(" "));
   });
 });
 var hand = ["6X", "2X+4", "X/2"].map(function (f) { return cards.filter(function (c) { return c.formula === f; })[0]; });
+var two = T.makeRound("linear", { diff: "gentle", seed: 7, cards: cards, types: ["x21", "eig"] });
+ok = ok && two.length === 10 && two.every(function (q) { return q.type === "x21" || q.type === "eig"; });
+console.log(" picked types only (21X hands + eigenvalues): " + two.map(function (q) { return q.type; }).join(" "));
 console.log(" rulebook hand 6X + 2X+4 + X/2 makes 21 at X = " + X21.solveX(hand, 30).join(", "));
 console.log(" html size: " + html.length.toLocaleString() + " chars");
 console.log(ok && X21.solveX(hand, 30)[0] === 2 ? "PASS" : "CHECK");

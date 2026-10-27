@@ -259,13 +259,18 @@ function solveLinear(q) {
 }
 
 var SEEDS = 400;
+function seedOf(s) {                          // FNV-1a, to spread test seeds
+  var h = 0x811c9dc5;
+  for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
 test("every template, every tier: answers re-derived independently", function () {
   [["mental", T.MENTAL], ["linear", T.LINEAR]].forEach(function (pair) {
     pair[1].forEach(function (tpl) {
       assert.ok(CHECK[tpl.type], "no checker for " + tpl.type);
       tpl.tiers.forEach(function (tier) {
         for (var s = 1; s <= SEEDS; s++) {
-          var r = T.mulberry32(T.hashStr(tpl.type + tier + ":" + s));
+          var r = T.mulberry32(seedOf(tpl.type + tier + ":" + s));
           var q = tpl.gen(r, tier, CTX);
           q.type = tpl.type; q.tier = tier; if (q.label === undefined) q.label = "";
           var where = tpl.type + " t" + tier + " seed " + s + ": " + plain(q.html) + " [" + plain(q.label) + "] = " + q.answer;
@@ -284,61 +289,72 @@ test("every template, every tier: answers re-derived independently", function ()
 });
 
 /* ---------------- rounds ---------------- */
-test("daily rounds: 10 questions on the ramp, deterministic, varied", function () {
+test("every question type has a unique name and id", function () {
+  var all = T.MENTAL.concat(T.LINEAR), names = all.map(function (t) { return t.label; }), ids = all.map(function (t) { return t.type; });
+  all.forEach(function (t) { assert.ok(typeof t.label === "string" && t.label.length > 2, t.type + " has a name"); });
+  assert.strictEqual(new Set(names).size, names.length, "names are unique");
+  assert.strictEqual(new Set(ids).size, ids.length, "ids are unique across both rounds (Settings keeps one list)");
+});
+test("every type on: 10 different questions on the ramp, repeatable from the seed", function () {
   ["mental", "linear"].forEach(function (cat) {
     Object.keys(T.RAMPS).forEach(function (diff) {
-      for (var d = 0; d < 60; d++) {
-        var day = T.addDays("2026-10-27", d), seed = T.dailySeed(day, cat, diff);
-        var a = T.makeRound(cat, diff, seed, CTX), b = T.makeRound(cat, diff, seed, CTX);
+      for (var s = 0; s < 150; s++) {
+        var opts = { diff: diff, seed: seedOf(cat + diff + s), cards: CARDS };
+        var a = T.makeRound(cat, opts), b = T.makeRound(cat, opts);
         assert.strictEqual(a.length, T.ROUND);
         a.forEach(function (q, k) {
-          assert.strictEqual(q.tier, T.RAMPS[diff][k]);
+          assert.strictEqual(q.tier, T.RAMPS[diff][k], "follows the ramp");
           assert.strictEqual(q.n, k + 1);
-          assert.strictEqual(q.html, b[k].html, "same day, same questions");
-          assert.strictEqual(q.answer, b[k].answer);
+          assert.strictEqual(q.html, b[k].html, "same seed, same questions");
         });
-        var types = a.map(function (q) { return q.type; }), uniq = types.filter(function (t, i) { return types.indexOf(t) === i; });
-        assert.ok(uniq.length >= 9, cat + " " + diff + " " + day + " repeats: " + types);
+        var types = a.map(function (q) { return q.type; });
+        assert.strictEqual(new Set(types).size, T.ROUND, cat + " " + diff + " repeats a type: " + types);
         if (cat === "linear") {
-          assert.strictEqual(types.filter(function (t) { return t === "x21"; }).length, 1, "one 21X hand per linear round");
           var eqs = a.filter(function (q) { return q.fam === "eq"; }).length;
           assert.ok(eqs >= 4 && eqs <= 6, "equations and matrices stay balanced: " + eqs);
         }
       }
     });
   });
-  var x = T.makeRound("mental", "standard", T.dailySeed("2026-10-27", "mental", "standard"), CTX);
-  var y = T.makeRound("mental", "standard", T.dailySeed("2026-10-28", "mental", "standard"), CTX);
-  assert.notDeepStrictEqual(x.map(function (q) { return q.html; }), y.map(function (q) { return q.html; }), "a new day brings new questions");
-  var noCards = T.makeRound("linear", "standard", 5, {});
-  assert.ok(noCards.every(function (q) { return q.type !== "x21"; }), "without the deck the 21X hand is left out");
+  var x = T.makeRound("mental", { seed: 1 }), y = T.makeRound("mental", { seed: 2 });
+  assert.notDeepStrictEqual(x.map(function (q) { return q.html; }), y.map(function (q) { return q.html; }), "a new seed, a new round");
 });
-
-/* ---------------- days & streaks ---------------- */
-test("days and streaks", function () {
-  assert.strictEqual(T.addDays("2026-12-31", 1), "2027-01-01");
-  assert.strictEqual(T.addDays("2028-03-01", -1), "2028-02-29");
-  assert.strictEqual(T.addDays("2026-03-29", 1), "2026-03-30", "across a DST change");
-  assert.strictEqual(T.addDays("2026-10-25", -1), "2026-10-24");
-  assert.strictEqual(T.dayKey(new Date(2026, 0, 5)), "2026-01-05");
-  var R = { score: 9 };
-  var days = { "2026-10-20": { mental: R }, "2026-10-22": { mental: R }, "2026-10-23": { linear: R }, "2026-10-24": { mental: R, linear: R }, "2026-10-26": { mental: R } };
-  assert.strictEqual(T.streak(days, "2026-10-26"), 1);
-  assert.strictEqual(T.streak(days, "2026-10-27"), 1, "today not played yet: yesterday keeps the streak alive");
-  assert.strictEqual(T.streak(days, "2026-10-28"), 0);
-  days["2026-10-25"] = { linear: R };
-  assert.strictEqual(T.streak(days, "2026-10-27"), 5);
-  assert.strictEqual(T.bestStreak(days), 5);
-  assert.strictEqual(T.streak({}, "2026-10-27"), 0);
-  assert.strictEqual(T.bestStreak({}), 0);
-  assert.strictEqual(T.streak({ "2026-10-27": {} }, "2026-10-27"), 0, "an empty day doesn't count");
+test("picked types only: each one comes up, shared evenly, easiest first", function () {
+  var rng = T.mulberry32(99);
+  ["mental", "linear"].forEach(function (cat) {
+    var list = T.CATS[cat].list;
+    Object.keys(T.RAMPS).forEach(function (diff) {
+      for (var s = 0; s < 150; s++) {
+        var types = T.shuffle(list.map(function (t) { return t.type; }), rng).slice(0, 1 + Math.floor(rng() * 12));
+        var qs = T.makeRound(cat, { diff: diff, seed: seedOf("pick" + cat + diff + s), cards: CARDS, types: types }), seen = {};
+        assert.strictEqual(qs.length, T.ROUND);
+        qs.forEach(function (q, i) {
+          assert.ok(types.indexOf(q.type) >= 0, "only picked types: " + q.type + " not in " + types);
+          assert.ok(list.filter(function (t) { return t.type === q.type; })[0].tiers.indexOf(q.tier) >= 0, "a tier " + q.type + " has");
+          if (i) assert.ok(q.tier >= qs[i - 1].tier, "easiest first");
+          seen[q.type] = (seen[q.type] || 0) + 1;
+        });
+        if (types.length <= T.ROUND) {
+          types.forEach(function (t) { assert.ok(seen[t] >= 1, t + " was picked but never came up (" + diff + ")"); });
+          var counts = Object.keys(seen).map(function (t) { return seen[t]; });
+          assert.ok(Math.max.apply(null, counts) - Math.min.apply(null, counts) <= 1, "shared evenly: " + JSON.stringify(seen));
+        }
+      }
+    });
+  });
+  var eig = T.makeRound("linear", { diff: "gentle", seed: 3, types: ["eig"] });
+  assert.ok(eig.length === T.ROUND && eig.every(function (q) { return q.type === "eig" && q.tier === 3; }), "a hard-only type still fills a gentle round");
+  assert.deepStrictEqual(T.makeRound("linear", { seed: 1, cards: CARDS, types: [] }), [], "nothing picked, no round");
+  assert.deepStrictEqual(T.makeRound("linear", { seed: 1, types: ["x21"] }), [], "21X hands need the deck");
+  var noCards = T.makeRound("linear", { diff: "standard", seed: 5 });
+  assert.ok(noCards.length === T.ROUND && noCards.every(function (q) { return q.type !== "x21"; }), "without the deck the 21X hands are left out");
 });
 
 console.log(passed + " tests passed" + (process.exitCode ? " (with failures above)" : ""));
 
 /* ---------------- informational ---------------- */
 var t0 = Date.now(), n = 0;
-for (var s = 0; s < 200; s++) { T.makeRound("linear", "spicy", s, CTX); T.makeRound("mental", "spicy", s, CTX); n += 2; }
+for (var s = 0; s < 200; s++) { T.makeRound("linear", { diff: "spicy", seed: s, cards: CARDS }); T.makeRound("mental", { diff: "spicy", seed: s }); n += 2; }
 console.log("\nmakeRound(): " + ((Date.now() - t0) / n).toFixed(2) + " ms per round");
 console.log("\nAnswer ranges per template (tier: min..max):");
 [T.MENTAL, T.LINEAR].forEach(function (list) {
