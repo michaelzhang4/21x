@@ -1,7 +1,7 @@
 {
-  "name": "21X trainer",
-  "short_name": "21X",
-  "description": "Practise 21X, the algebraic blackjack card game.",
+  "name": "Train of Thought",
+  "short_name": "Train of Thought",
+  "description": "Ten mental maths and ten linear algebra questions a day, with a timer and a score.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

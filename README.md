@@ -1,86 +1,68 @@
-# 21X trainer
+# Train of Thought
 
 **▶ Live: [michaelzhang4.github.io/21x](https://michaelzhang4.github.io/21x/)**
 
-A phone-friendly, **single-file** web app for practising *21X*, the algebraic blackjack
-card game. Every card is an expression in **X** (a whole number you choose, never 0) and
-**N** (how many cards you hold). Pick an X that makes your hand total exactly 21. Over 21 is
-bust, and so is exactly 20.
+A phone-friendly, **single-file** web app for getting your head into gear on the morning
+train. Every day there are two rounds of ten questions, **Mental maths** and
+**Linear algebra**, each with a timer and a score.
 
-> ⚠️ Unofficial fan project. *21X* is a card game by [Naylor Games](https://naylorgames.com/)
-> (designer Leo Samson). This project is not affiliated with or endorsed by Naylor Games.
+## How a round works
 
-## Modes
+- The ten questions ramp up: warm-ups first, then harder ones. Everyone gets the same
+  questions on the same day (they're generated from the date), and a new set arrives at midnight.
+- Every answer is a whole number. Type it on the built-in keypad (with **±** for negatives) and submit.
+- Your **score** is how many you get right. Your **time** is the total time spent answering:
+  the clock only runs while a question is waiting for you.
+- Get one wrong (or skip it) and you see the right answer with a short worked solution.
+  The worked answers show the mental shortcut, like `(70 − 3)² = 4900 − 420 + 9`.
+- Pause any time. Locking your phone pauses too. A daily round in progress is saved, so if
+  you reach your stop halfway through, you can finish it later that day.
+- The results screen reviews every question and compares the round with your last seven.
+  **History** tracks your streak, averages and fastest perfect rounds.
+- **Extra rounds** give you ten random questions that don't count towards your history.
 
-- **Solo challenge**: the rulebook's single-player mode. Race to put **21 difficulty
-  icons** into your score area by making hands that total exactly 21. You can mulligan
-  any time, draw up to 5 cards, and there's no standing. A stopwatch runs, and your best
-  times are saved for each deck and penalty setting.
-- **Duel vs bot**: the multiplayer rules against a bot (Easy, Medium or Hard).
-  - Draw up to 5 cards.
-  - **Call 21** to win the game instantly. A wrong call knocks you out of that game.
-  - **Stand** to lock in your total and start a **60-second timer** your opponent must
-    beat. Ties go to the player who stood.
-  - The winner scores the icons on their hand. First to 21 points wins the match.
-- **Practice**: no clock. You get hints (is 21 possible? which X?), optional live totals,
-  and a tip whenever you mulligan a hand that could have made 21.
-- **Cards** (a gallery with zoom, plus indexed sequences for the Celebrity cards) and
-  **How to play**.
+## What's in the rounds
 
-The app has a custom keypad with a ± key, because phone number keyboards often have no
-minus. It also has exact fraction arithmetic (4X/N, X/2 … are never rounded), and you can
-pause it. When added to your home screen it runs full-screen and works offline.
+**Mental maths:** addition and subtraction (with carries), times tables and 2-digit
+multiplication, exact division, percentages and percentage change, fractions of amounts,
+squares, square roots, powers, order of operations, negatives, remainders, averages,
+series (1 + 2 + ⋯ + n, sums of odd numbers) and shortcuts (×5, ×25, ×11, ×99, ×101, ×125,
+(m − d)(m + d)).
 
-## Rules implemented
+**Linear algebra:** half equations, half vectors and matrices.
 
-Taken from the official rulebook (via [RulesPal](https://rulespal.com/21x/rulebook)) and
-cross-checked against published reviews:
+- Equations: linear equations (with brackets and fractions), simultaneous equations, slopes and
+  linear functions, and singular matrices ("find k").
+- Vectors and matrices: dot and cross products, linear combinations, 2×2 and 3×3 determinants,
+  matrix–vector and matrix–matrix products, trace, eigenvalues, inverses, vector lengths and
+  determinant rules (det(2AB), det(Aᵀ), det(A⁻¹B) …).
+- **One 21X hand per round.** From the algebraic blackjack card game *21X*: choose a whole number
+  **X** (never 0) so the cards total exactly 21, where **N** is the number of cards in the hand.
+  The hands are dealt from the 54 Core cards in `data/cards.csv`. Any X that makes 21 counts.
 
-- **N** is the number of cards in your hand (2 to start, max 5).
-- **X** is a non-zero whole number, the same on every card. You can change it until you
-  call or stand.
-- Totals may be fractions. Over 21 is bust, and **exactly 20 is bust** too.
-- Difficulty icons: ▲ level 1 (integers, + − ×), ■▲ level 2 (÷2, brackets, powers),
-  ⬟■▲ level 3 (harder division and expressions).
-- **Celebrity cards** (Xth prime, Xth triangle number, Fib(X), sum of factors of X, the Xth
-  digit of π or e): the value is the term X places along the sequence. A negative X counts
-  as positive, then the result is negated.
-- **V & Y cards**: **Y** is a second number you choose, and it must be positive. **V** is
-  1 + games won this session (in solo, 1 + hands in your score area).
+**Difficulty** (Settings) changes the ramp. **Gentle** has six warm-ups and four medium
+questions. **Standard** has three warm-ups, four medium and three hard. **Spicy** has one
+warm-up, three medium and six hard. Each difficulty has its own daily set.
 
-App-specific choices:
+## On your phone
 
-- In Solo, a wrong call adds a time penalty (10 s by default, adjustable). The rulebook has
-  no penalty because checking your maths is slow at the table, but here checking is instant.
-- The duel bot "thinks" for a time that depends on its level and how hard its hand looks.
-  It only searches a limited range of X.
-
-## About the cards
-
-The official card list isn't published. `data/cards.csv` holds the 87 cards in the app:
-
-| Set | Cards | Source |
-| --- | --- | --- |
-| Core level 1 / 2 / 3 | 18 / 18 / 18 | all 28 Core cards shown in the rulebook or in published reviews (marked `published`), plus fan-made cards (`fan`) built to the rulebook's level definitions |
-| Celebrity | 6 | the six sequence cards described in the rulebook |
-| V & Y | 27 | fan-made, in the spirit of the Limited Edition expansion (Y, V and factorials) |
-
-If you own the game, you can edit the CSV to match your deck and rebuild. The formulas use
-the printed notation: `2X+4`, `4N/X`, `X(N+2)`, `(X-N)^2`, `N!`, `XY/N`, `prime(X)`,
-`tri(X)`, `fib(X)`, `sigma(X)`, `pidigit(X)`, `edigit(X)`. Writing two terms next to each
-other multiplies them, and `-X^2` means −(X²).
+Open the live link, then use **Share → Add to Home Screen** (iOS) or **⋮ → Install app**
+(Android). It then opens full screen and works offline, which helps in tunnels. History and
+settings are stored only in your browser on that device.
 
 ## Repository layout
 
 | Path | What it is |
 | --- | --- |
 | `index.html` | The built, self-contained app (what GitHub Pages serves) |
-| `data/cards.csv` | The card list (id, set, level, formula, name, origin) |
-| `build/lib.js` | Pure game logic: exact rationals, formula parser/renderer, solver, solo game, bot (no DOM; Node-testable) |
-| `build/app.js` | Browser UI: screens, keypad, game modes |
+| `build/lib.js` | Question generators, daily rounds, streaks (no DOM; Node-testable) |
+| `build/cards.js` | The 21X card engine: exact rationals, card formula parser/renderer, "make 21" solver |
+| `build/app.js` | Browser UI: screens, keypad, clock, history |
 | `build/template.html` | HTML shell + CSS, with placeholders for the scripts and the card list |
 | `build/build.ps1` | Assembles `index.html` from the template, scripts and CSV |
+| `build/icons.ps1` | Draws `icon-180.png` and `icon-512.png` |
 | `build/test.js`, `build/verify.js` | Validation harnesses (Node) |
+| `data/cards.csv` | The 21X Core cards used for the 21X hands |
 | `manifest.webmanifest`, `sw.js`, `icon-*.png` | Home-screen install and offline support |
 
 ## Building from source
@@ -93,9 +75,16 @@ powershell -ExecutionPolicy Bypass -File "build/build.ps1"
 Validate (requires [Node.js](https://nodejs.org/) 18+):
 
 ```bash
-node build/test.js     # unit tests (rules, parser, sequences, solver, solo game, bot) + deck statistics
-node build/verify.js   # re-extracts the embedded card list and scripts from the built HTML and checks them
+node build/test.js     # every question template re-solved independently over thousands of seeds, rounds, streaks, 21X engine
+node build/verify.js   # re-extracts the embedded scripts and card list from the built HTML and checks them
 ```
+
+`test.js` doesn't trust the generators' own answers. It parses each rendered question back
+(matrices, equations, card hands) and works the answer out again a different way, for 400
+seeds of every template at every difficulty tier.
+
+If you change a generator, bump `GEN` in `build/lib.js`. That reseeds every daily set, so a
+day's questions never mix two versions.
 
 ## Publishing
 
@@ -103,12 +92,14 @@ GitHub Pages serves `index.html` straight from the `main` branch: **Settings →
 Build and deployment → Deploy from a branch → `main` / `(root)`**. After pushing a rebuilt
 `index.html`, the site updates within a minute or two.
 
-On your phone, open the live link. Then use **Share → Add to Home Screen** (iOS) or
-**⋮ → Add to Home screen / Install app** (Android) to get a full-screen app.
+## History and credits
+
+This repo started as a trainer for *21X*, the algebraic blackjack card game. The 21X hand
+questions keep its card engine and Core card list. *21X* is a card game by
+[Naylor Games](https://naylorgames.com/) (designer Leo Samson). This project is not affiliated
+with or endorsed by Naylor Games.
 
 ## License
 
-The **code** in this repository is released under the [MIT License](LICENSE).
-
-The game *21X*, its name and rules belong to Naylor Games and are **not** covered by the MIT
-license. They are summarised here for practice and fan use only. Please buy the real game.
+The **code** in this repository is released under the [MIT License](LICENSE). The game *21X*,
+its name and rules belong to Naylor Games and are not covered by the MIT license.

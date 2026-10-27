@@ -7,12 +7,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="21X">
-<meta name="description" content="Practise 21X, the algebraic blackjack card game: solo time trial, duel against a bot, and a relaxed practice mode.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23123026'/%3E%3Ctext x='31' y='43' font-family='Georgia,serif' font-size='29' font-weight='700' text-anchor='middle' fill='%23e8b84b'%3E21%3Ctspan font-style='italic'%3EX%3C/tspan%3E%3C/text%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-title" content="Train of Thought">
+<meta name="description" content="Ten mental maths and ten linear algebra questions a day, with a timer and a score. Made for the morning train.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23123026'/%3E%3Cpath d='M10 44 L54 20' stroke='%23e8b84b' stroke-width='6' stroke-linecap='round'/%3E%3Ccircle cx='14' cy='42' r='5' fill='%23fffdf7' stroke='%231b2130' stroke-width='2'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23fffdf7' stroke='%231b2130' stroke-width='2'/%3E%3Ccircle cx='50' cy='22' r='5' fill='%23fffdf7' stroke='%231b2130' stroke-width='2'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
-<title>21X — algebraic blackjack trainer</title>
+<title>Train of Thought — daily mental maths &amp; linear algebra</title>
 <style>
  :root{
   --text:#eef2ef; --muted:#97a8a0; --line:#2b3a34; --panel:#16221e; --panel2:#1d2b26;
@@ -29,21 +29,29 @@
  button:disabled{opacity:.38;cursor:default}
  a{color:var(--gold2)}
  #app{height:100%}
+ .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)} .dim{color:var(--muted);font-weight:500}
 
  /* ---------- menus ---------- */
  .menu{max-width:540px;margin:0 auto;padding:calc(var(--sat) + 18px) 16px calc(var(--sab) + 28px);min-height:100%}
- .logo{font:700 84px/1 var(--math);color:var(--gold);text-align:center;letter-spacing:-2px;margin-top:10px;text-shadow:0 3px 0 #0007}
+ .hero{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:14.5px}
+ .logo{font:700 46px/1.02 var(--math);color:var(--gold);text-align:center;margin:18px 0 0;text-shadow:0 3px 0 #0007;letter-spacing:-.5px}
  .logo i{color:var(--gold2)}
- .tag{text-align:center;color:var(--muted);margin:6px 0 18px}
- .big{display:block;width:100%;text-align:left;padding:14px 16px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);margin:10px 0}
- .big:active{background:#243630}
- .big b{font-size:19px;color:var(--gold2)}
- .big small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+ .tag{text-align:center;color:var(--muted);margin:6px 0 16px}
+ .day{display:block;width:100%;text-align:left;padding:14px 16px 12px;border-radius:16px;background:var(--panel2);border:1px solid var(--line);margin:10px 0}
+ .day:active{background:#243630}
+ .day .dh{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+ .day b{font-size:20px;color:var(--gold2)}
+ .day .st{font-weight:800;font-size:15px;white-space:nowrap;font-variant-numeric:tabular-nums}
+ .day small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+ .day.done{border-color:#2f6f4c;background:#173025}
+ .day .line{margin:10px 2px 2px}
  .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
  .btn{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 10px;font-weight:600}
  .btn:active{background:#243630}
  .btn.gold{background:linear-gradient(#f6d27c,#e2a83a);color:#1d1503;border:0}
- .foot{color:var(--muted);font-size:12.5px;text-align:center;margin-top:26px}
+ .foot{color:var(--muted);font-size:12.5px;text-align:center;margin-top:24px}
+ .hl{color:var(--gold2)}
+ .menu .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}
  .top{display:flex;align-items:center;gap:10px;margin:0 0 12px}
  .top h2{margin:0;font-size:22px;color:var(--gold2)}
  .ib{width:42px;height:42px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);font-size:20px;line-height:1;flex:none;display:inline-flex;align-items:center;justify-content:center}
@@ -65,247 +73,222 @@
  .tog.on{background:var(--gold)}
  .tog.on::after{left:25px;background:#fff}
  .err{background:#3a1717;border:1px solid #7a2a2a;border-radius:12px;padding:10px 12px;color:#ffd0d0}
- .rec{width:100%;border-collapse:collapse;font-size:14.5px}
- .rec td{padding:4px 2px;border-top:1px solid #ffffff10}
- .rec td:last-child{text-align:right;color:var(--muted)}
- .gal{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
- .gal .card{--cw:96px}
- .gal-l{color:var(--muted);font-size:13px;margin:12px 0 6px}
- .tagp{position:absolute;top:3px;left:50%;transform:translateX(-50%);font:600 9px/1 system-ui,sans-serif;color:#7a6a45;letter-spacing:.3px;text-transform:uppercase}
+ .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+ .tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+ .tile b{display:block;font-size:26px;line-height:1.15;color:var(--gold2);font-variant-numeric:tabular-nums}
+ .tile small{color:var(--muted);font-size:13px}
+ .rec{width:100%;border-collapse:collapse;font-size:14.5px;font-variant-numeric:tabular-nums}
+ .rec td,.rec th{padding:5px 2px;border-top:1px solid #ffffff10;text-align:left}
+ .rec th{color:var(--muted);font-weight:600;font-size:13px;border-top:0}
+ .rec td.r,.rec th.r{text-align:right}
+ .pill{display:inline-block;min-width:3.2em;text-align:center;border-radius:99px;padding:1px 7px;font-weight:700;font-size:13.5px;background:#0d1714}
+ .pill.p10{background:#1d5a3a;color:#d7ffe6}
+ kbd{background:#0d1714;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font:600 13px system-ui,sans-serif}
 
- /* ---------- game screen ---------- */
+ /* ---------- the line map: one stop per question ---------- */
+ .line{display:flex;align-items:center;justify-content:space-between;position:relative;height:16px;--p:0%}
+ .line::before,.line::after{content:"";position:absolute;left:5px;top:50%;height:3px;margin-top:-1.5px;border-radius:2px}
+ .line::before{right:5px;background:#ffffff1c}
+ .line::after{width:calc((100% - 10px) * var(--f,0));background:var(--gold);opacity:.75;transition:width .3s}
+ .line i{position:relative;z-index:1;width:12px;height:12px;border-radius:50%;background:#0d1714;border:2px solid #3d4f47;flex:none}
+ .line i.ok{background:var(--good);border-color:var(--good)}
+ .line i.no{background:var(--bad);border-color:var(--bad)}
+ .line i.sk{background:#0d1714;border-color:var(--bad)}
+ .line i.cur{border-color:var(--gold);background:#2b2410;box-shadow:0 0 0 3px #e8b84b33;animation:pulse 1.6s ease-in-out infinite}
+ @keyframes pulse{50%{box-shadow:0 0 0 6px #e8b84b10}}
+ .line.big{height:22px}
+ .line.big i{width:18px;height:18px;border-width:3px}
+
+ /* ---------- play screen ---------- */
  .game{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:560px;margin:0 auto;padding-top:var(--sat);user-select:none;-webkit-user-select:none;overflow:hidden}
  .bar{display:flex;align-items:center;gap:8px;padding:8px 10px 4px}
- .bar .ttl{font-weight:800;color:var(--gold2);font-size:17px;white-space:nowrap}
+ .bar .ttl{font-weight:800;color:var(--gold2);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .bar .sp{flex:1}
  .chip{display:inline-flex;align-items:center;gap:5px;background:#0d1714c0;border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-weight:700;font-size:14.5px;white-space:nowrap;font-variant-numeric:tabular-nums}
- .chip.pen{color:var(--warn)}
- .opp{margin:2px 10px 0;padding:6px 8px 8px;border-radius:14px;background:#0d1714a0;border:1px solid var(--line)}
- .opp-h{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:6px}
- .opp-h b{color:var(--gold2)}
- .opp-h .st{color:var(--muted);flex:1;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- .opp-h .st.hot{color:var(--warn)}
- .opp .hand{justify-content:flex-start;max-width:none;flex-wrap:nowrap;gap:5px}
- .opp-t{font-size:13.5px;margin-top:5px;font-weight:700;min-height:1.1em}
- .table{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:6px 10px;position:relative}
- .info{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:30px}
- .timer{display:flex;align-items:center;gap:8px;background:#3b2a0c;border:1px solid #8a6420;color:var(--gold2);border-radius:99px;padding:4px 12px;font-weight:800;font-variant-numeric:tabular-nums}
- .timer.low{background:#4a1515;border-color:#a33;color:#ffd0d0}
- .hand{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--gap,8px)}
- .verdict{min-height:1.5em;font-weight:700;text-align:center;font-size:16px;line-height:1.3;padding:0 6px}
- .verdict .mf{font-size:.8em}
- .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)} .dim{color:var(--muted);font-weight:500}
- .pad{padding:6px 10px calc(var(--sab) + 8px);background:#08100dd9;border-top:1px solid #ffffff12}
- .inputs{display:flex;gap:6px;margin-bottom:6px}
- .field{flex:1 1 0;min-width:0;height:50px;border-radius:12px;background:#0b1512;border:2px solid #2c3b35;font-size:25px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:.25em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
- .field.on{border-color:var(--gold);box-shadow:0 0 0 3px #e8b84b22}
- .field .lab{font:italic 700 26px var(--math);color:var(--gold)}
- .field .ph{color:#5c6d66}
- .field .na{font-size:15px;color:var(--muted);font-weight:500}
- .field.on .ph{animation:blink 1s steps(1) infinite}
+ .skip{height:34px;border-radius:99px;background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:700;font-size:13.5px;padding:0 12px}
+ .game>.line{margin:6px 20px 0}
+ .stage{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:6px 14px;position:relative}
+ .qp{color:var(--muted);font-size:14px;font-weight:600;text-align:center;letter-spacing:.2px}
+ .qp .v{font-family:var(--math);font-size:1.15em}
+ .qx{font-family:var(--math);font-size:40px;line-height:1.25;text-align:center;white-space:nowrap;max-width:100%;font-variant-numeric:lining-nums}
+ .fbk{min-height:1.4em;text-align:center;font-size:15.5px;line-height:1.4;padding:0 4px;max-width:100%}
+ .fbk b{font-size:17px}
+ .why{color:#cfdad5;font-size:14.5px;line-height:1.55;margin-top:3px}
+ .why .mat{font-size:.95em}
+ .paused .stage,.paused .ans{visibility:hidden}
+ .pad{padding:8px 10px calc(var(--sab) + 10px);background:#08100dd9;border-top:1px solid #ffffff12}
+ .ans{height:58px;border-radius:14px;background:#0b1512;border:2px solid var(--gold);box-shadow:0 0 0 3px #e8b84b22;display:flex;align-items:center;justify-content:center;gap:.3em;
+  font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;margin-bottom:8px;padding:0 10px}
+ .ans .lab{font:italic 600 28px var(--math);color:var(--gold)}
+ .ans .lab .w{font:600 16px system-ui,sans-serif;color:var(--muted);margin:0}
+ .ans .lab .o{margin:0 .12em}
+ .ans .eqs{color:var(--muted);font-weight:500}
+ .ans .ph{color:#5c6d66;animation:blink 1s steps(1) infinite}
  @keyframes blink{50%{opacity:.2}}
- .step{width:54px;flex:none;height:50px;border-radius:12px;background:#1b2622;border:1px solid #2c3b35;font-weight:700;font-size:15px}
- .keys{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;transition:opacity .15s}
+ .ans.good{border-color:var(--good);background:#0f2a1b;box-shadow:0 0 0 3px #5ed38c33}
+ .ans.bad{border-color:var(--bad);background:#2a1212;box-shadow:0 0 0 3px #ff6f6f2a;animation:shake .32s}
+ .ans.bad .you{text-decoration:line-through;text-decoration-thickness:2px;color:#ffb3b3}
+ @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+ .keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;transition:opacity .15s}
  .keys.off{opacity:.38;pointer-events:none}
- .key{height:46px;border-radius:11px;background:#1d2925;border:1px solid #2c3b35;font-size:21px;font-weight:600;padding:0}
- .key:active,.step:active{background:#31423b}
- .key.alt{background:#16201d;color:#c9d6d0;font-size:18px}
- .acts{display:grid;grid-template-columns:1fr 1fr 1.35fr;gap:6px;margin-top:6px}
- .act{height:52px;border-radius:13px;background:#22322c;border:1px solid #33463e;font-weight:800;font-size:15.5px;line-height:1.1;padding:0 6px}
- .act small{display:block;font-weight:600;font-size:11.5px;color:var(--muted)}
- .act:active{background:#2e433b}
- .act.call{background:linear-gradient(#f6d27c,#e2a83a);color:#1d1503;border:0;font-size:18px}
- .act.call small{color:#5a4410}
- .act.call:active{background:#d99f30}
- .act.wide{grid-column:1/-1}
- .scorebar{height:6px;margin:0 10px;border-radius:99px;background:#ffffff14;overflow:hidden}
- .scorebar i{display:block;height:100%;background:linear-gradient(90deg,var(--tri),var(--gold));transition:width .4s}
- @media (max-height:640px){
-  .bar{padding:6px 10px 3px} .ib{width:38px;height:38px}
-  .chip{padding:3px 9px;font-size:14px}
-  .field,.step{height:44px} .field{font-size:23px}
-  .key{height:40px;font-size:19px} .keys{gap:5px}
-  .act{height:46px;font-size:15px} .act.call{font-size:17px}
-  .inputs{margin-bottom:5px} .acts{margin-top:5px}
-  .pad{padding-top:5px}
-  .table{gap:6px;padding:4px 10px}
+ .key{height:54px;border-radius:12px;background:#1d2925;border:1px solid #2c3b35;font-size:24px;font-weight:600;padding:0}
+ .key:active{background:#31423b}
+ .key.alt{background:#16201d;color:#c9d6d0;font-size:21px}
+ .go{display:block;width:100%;height:56px;margin-top:7px;border-radius:14px;border:0;background:linear-gradient(#f6d27c,#e2a83a);color:#1d1503;font-weight:800;font-size:18px}
+ .go:active{background:#d99f30}
+ @media (max-height:700px){
+  .bar{padding:6px 10px 2px} .ib{width:38px;height:38px}
+  .ans{height:50px;font-size:27px;margin-bottom:6px} .key{height:46px;font-size:22px} .keys{gap:6px}
+  .go{height:50px;margin-top:6px} .qx{line-height:1.2}
  }
 
- /* ---------- cards ---------- */
- .card{position:relative;flex:none;width:var(--cw,100px);height:calc(var(--cw,100px) * 1.4);border-radius:calc(var(--cw,100px) * .09);
-  background:linear-gradient(160deg,#fffdf7,#f1e7d0);color:var(--ink);container-type:inline-size;
-  display:flex;align-items:center;justify-content:center;overflow:hidden;
-  box-shadow:0 1px 0 #fff inset,0 2px 0 #0004,0 6px 14px #0007}
- .card.new{animation:deal .3s cubic-bezier(.2,.8,.3,1.15)}
- @keyframes deal{from{transform:translateY(-26px) rotate(-7deg) scale(.88);opacity:0}to{transform:none;opacity:1}}
- .card.zoomable{cursor:zoom-in}
- .fx{font-family:var(--math);font-size:min(30cqw,calc(88cqw / var(--fw)));line-height:1.08;white-space:nowrap;text-align:center;font-weight:600;padding-bottom:2cqw}
- .fx .v{font-style:italic;font-weight:600}
- .fx .o.b{margin:0 .2em 0 .27em}
- .fx .p{font-weight:400}
+ /* ---------- maths typesetting ---------- */
+ .v{font-style:italic}
+ .o{margin:0 .22em}
+ .w{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:.5em;color:var(--muted);font-weight:600;margin:0 .45em;vertical-align:.12em;letter-spacing:.2px}
+ .fn{font-style:normal;margin-right:.08em}
  .fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .07em}
  .fr-n{padding:0 .12em .05em}
  .fr-d{border-top:max(1.5px,.065em) solid currentColor;padding:.05em .12em 0}
  .ex{font-size:.62em;vertical-align:.78em;line-height:0;margin-left:.03em}
+ .mat{display:inline-grid;grid-template-columns:repeat(var(--c),auto);gap:.06em .55em;position:relative;padding:.1em .42em;margin:0 .12em;vertical-align:middle;line-height:1.2}
+ .mat>span{text-align:center;white-space:nowrap}
+ .mat::before,.mat::after{content:"";position:absolute;top:0;bottom:0;width:.28em;border:max(1.5px,.07em) solid currentColor}
+ .mat::before{left:0;border-right:0}
+ .mat::after{right:0;border-left:0}
+ .mat.det::before{border-width:0 0 0 max(1.5px,.07em)}
+ .mat.det::after{border-width:0 max(1.5px,.07em) 0 0}
+ .nrm{display:inline-block;vertical-align:middle;border-left:.2em double currentColor;border-right:.2em double currentColor;padding:0 .1em;margin:0 .1em}
+ .nrm .mat::before,.nrm .mat::after{display:none}
+ .msup{display:inline-flex;align-items:flex-start;vertical-align:middle}
+ .msup sup{font-size:.6em;margin-left:.06em;line-height:1}
+ .sys{display:inline-flex;flex-direction:column;align-items:flex-start;gap:.12em;position:relative;padding-left:.7em;vertical-align:middle}
+ .sys::before{content:"{";position:absolute;left:0;top:50%;font-size:1.1em;line-height:1;transform:translateY(-50%) scaleY(2.15);font-weight:300}
+ .stk{display:inline-flex;flex-direction:column;align-items:center;gap:.15em;vertical-align:middle}
+ .rt>span{border-top:max(1.5px,.06em) solid currentColor;padding:0 .08em;margin-left:.04em}
+ .gap{display:inline-block;width:1.1em}
+ .qx .hand{display:flex;justify-content:center;gap:var(--gap,8px);white-space:normal}
+ .nline{font:600 15px system-ui,sans-serif;color:var(--muted);margin-top:8px}
+ .nline .v{font:italic 600 1.15em var(--math);color:var(--gold)}
+
+ /* ---------- 21X cards ---------- */
+ .card{position:relative;flex:none;width:var(--cw,100px);height:calc(var(--cw,100px) * 1.4);border-radius:calc(var(--cw,100px) * .09);
+  background:linear-gradient(160deg,#fffdf7,#f1e7d0);color:var(--ink);container-type:inline-size;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  box-shadow:0 1px 0 #fff inset,0 2px 0 #0004,0 6px 14px #0007}
+ .fx{font-family:var(--math);font-size:min(30cqw,calc(88cqw / var(--fw)));line-height:1.08;white-space:nowrap;text-align:center;font-weight:600;padding-bottom:2cqw}
+ .fx .v{font-style:italic;font-weight:600}
+ .fx .o{margin:0}
+ .fx .o.b{margin:0 .2em 0 .27em}
+ .fx .p{font-weight:400}
  .cn{position:absolute;display:flex;flex-direction:column;gap:1.6cqw}
  .cn.tl{top:5cqw;left:5cqw}
  .cn.br{bottom:5cqw;right:5cqw;transform:rotate(180deg)}
  .sh{width:.9em;height:.9em;display:inline-block;vertical-align:-.08em;margin-right:.08em}
  .cn .sh{width:10.5cqw;height:10.5cqw;display:block;margin:0}
  .sh-t{fill:var(--tri)} .sh-s{fill:var(--sq)} .sh-p{fill:var(--pent)}
- .ics{white-space:nowrap}
- .mv{font:italic 600 1.08em var(--math)}
- code{background:#0d1714;border-radius:5px;padding:1px 5px;font-size:.92em}
- .card.pub::before{content:"\2605";position:absolute;top:3cqw;left:50%;transform:translateX(-50%);font-size:9cqw;color:#c99a2e}
- .ochips{display:flex;flex-wrap:wrap;gap:5px}
- .oc{display:inline-flex;align-items:center;gap:5px;background:#f3ead6;color:var(--ink);border-radius:7px;padding:2px 8px;font:600 15.5px/1.15 var(--math);min-height:28px;cursor:zoom-in;box-shadow:inset 3px 0 0 var(--tri)}
- .oc.lv2{box-shadow:inset 3px 0 0 var(--sq)} .oc.lv3{box-shadow:inset 3px 0 0 var(--pent)}
- .oc.seqc{background:#f6e3a9;font:700 12.5px/1.15 system-ui,sans-serif}
- .ocf{white-space:nowrap}
- .oc.lim{background:#e9e4da;outline:1px solid #121212}
- .oc .v{font-style:italic} .oc .o.b{margin:0 .15em}
- .oc .fr{font-size:.92em}
- .oc .ex{font-size:.62em;vertical-align:.7em;line-height:0}
- .ocv{font:800 12px/1.2 system-ui,sans-serif;color:#fff;background:#1b2130;border-radius:99px;padding:2px 6px;font-style:normal}
- .set-limited .cn{background:#121212;padding:2cqw;border-radius:3cqw}
- .set-celebrity{background:linear-gradient(160deg,#fffaf0,#f6e3a9);box-shadow:0 0 0 calc(var(--cw,100px) * .035) #d5a637 inset,0 2px 0 #0004,0 6px 14px #0007}
- .celeb{width:100%;padding:0 15cqw;text-align:center}
- .ct{font-weight:800;font-size:10.5cqw;line-height:1.1;color:#6d4b00;margin-bottom:3cqw;font-family:system-ui,sans-serif}
- .cs{display:flex;flex-wrap:wrap;justify-content:center;gap:.5cqw 3.2cqw;font-family:var(--math);font-size:8.6cqw;line-height:1.15;color:#3a3020;font-weight:600}
- .cs .lead{color:#9a7a30}
- @container (max-width:84px){ .cs{display:none} .ct{font-size:15cqw;margin:0} .celeb{padding:0 13cqw} }
- .val{position:absolute;left:50%;bottom:3.5cqw;transform:translateX(-50%);background:#1b2130;color:#fff;font:800 12cqw/1.15 system-ui,sans-serif;padding:1cqw 4.5cqw;border-radius:99px;white-space:nowrap;font-variant-numeric:tabular-nums}
- .val .mf{font-size:.75em}
- .val.good{background:#178a49} .val.bad{background:#b3343b} .val.live{background:#3a4a7a}
- .card.mini{--cw:56px}
- .card.back{background:repeating-linear-gradient(45deg,#163a2d 0 6px,#123026 6px 12px);box-shadow:0 0 0 2px #d5a637 inset,0 2px 0 #0004}
- .card.back::after{content:"21X";font:italic 700 26cqw var(--math);color:var(--gold)}
+ .val{position:absolute;left:50%;bottom:3.5cqw;transform:translateX(-50%);background:#1b2130;color:#fff;font:800 12cqw/1.15 system-ui,sans-serif;padding:1cqw 4.5cqw;border-radius:99px;white-space:nowrap}
  .mf{display:inline-flex;flex-direction:column;vertical-align:middle;font-size:.62em;line-height:1;text-align:center;margin-left:.08em}
  .mf span:last-child{border-top:1px solid currentColor}
+
+ /* ---------- results ---------- */
+ .score{display:flex;justify-content:center;gap:34px;margin:14px 0 4px;text-align:center}
+ .score b{display:block;font:800 50px/1.05 system-ui,sans-serif;font-variant-numeric:tabular-nums}
+ .score small{color:var(--muted);font-size:13.5px}
+ .verdict{text-align:center;margin:6px 0 12px;font-weight:600}
+ .rev{list-style:none;margin:8px 0;padding:0}
+ .rev li{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--good);border-radius:12px;padding:8px 11px 9px;margin:8px 0}
+ .rev li.no{border-left-color:var(--bad)}
+ .rev .rh{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:13px;font-weight:600}
+ .rev .rq{font-family:var(--math);font-size:22px;line-height:1.3;margin:4px 0 2px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding:2px 0}
+ .rev .rq .hand{display:flex;gap:6px;--cw:62px}
+ .rev .rq .nline{font-size:12.5px;margin-top:4px}
+ .rev .ra{font-size:15px}
+ .rev .ra .v,.rev .ra .mat{font-family:var(--math)}
+ .rev .why{font-size:13.5px}
 
  /* ---------- overlays ---------- */
  #fx{position:fixed;inset:0;pointer-events:none;z-index:60}
  .toast{position:absolute;left:50%;top:calc(var(--sat) + 56px);transform:translateX(-50%);background:#000000d8;border:1px solid #ffffff22;padding:9px 15px;border-radius:12px;font-weight:600;max-width:92vw;text-align:center;animation:toast 2.6s ease forwards;white-space:normal}
  @keyframes toast{0%{opacity:0;transform:translate(-50%,-8px)}7%{opacity:1;transform:translate(-50%,0)}82%{opacity:1}100%{opacity:0}}
- .banner{position:absolute;left:50%;top:calc(var(--sat) + 50px);transform:translateX(-50%);background:#0b2a1bf2;border:1px solid #2f8f5a;border-radius:14px;padding:8px 10px;text-align:center;animation:toast 2.1s ease forwards;width:max-content;max-width:96vw}
- .banner .hand{gap:4px;flex-wrap:nowrap}
- .banner .card{--cw:50px}
- .banner b{display:block;color:var(--good);margin-bottom:5px}
  .ov{position:fixed;inset:0;background:#000000c4;display:flex;align-items:center;justify-content:center;z-index:40;padding:16px;animation:fade .15s}
  @keyframes fade{from{opacity:0}}
  .sheet{background:#13201b;border:1px solid var(--line);border-radius:18px;padding:18px 16px;max-width:440px;width:100%;max-height:calc(100dvh - 32px);overflow:auto;text-align:center}
  .sheet h2{margin:0 0 4px;color:var(--gold2);font-size:24px}
- .sheet .huge{font:800 46px/1.1 system-ui,sans-serif;font-variant-numeric:tabular-nums;margin:6px 0}
  .sheet .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
- .zoom .card{--cw:min(64vw,300px);margin:0 auto}
- .zoom .seqt{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:4px;margin-top:12px;text-align:left;font-size:13.5px}
- .zoom .seqt span{background:#0d1714;border-radius:6px;padding:3px 6px;font-variant-numeric:tabular-nums}
- .zoom .seqt i{color:var(--muted);font-style:normal;font-size:11.5px;margin-right:4px}
- .paused .card .fx,.paused .card .celeb{visibility:hidden}
+ .sheet .btns.one{grid-template-columns:1fr}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="fx"></div>
-<script type="text/plain" id="cards-csv">id,set,level,formula,name,origin
-C1-01,core,1,6X,,published
-C1-02,core,1,2X+4,,published
-C1-03,core,1,8X,,published
-C1-04,core,1,3X,,published
-C1-05,core,1,4X,,published
-C1-06,core,1,-X,,published
-C1-07,core,1,-2X,,published
-C1-08,core,1,2-2X,,published
-C1-09,core,1,2X-6,,published
-C1-10,core,1,3N,,published
-C1-11,core,1,5N,,published
-C1-12,core,1,-3N,,published
-C1-13,core,1,N-1,,published
-C1-14,core,1,N-2X,,published
-C1-15,core,1,2X+2N,,published
-C1-16,core,1,4,,published
-C1-17,core,1,10,,published
-C1-18,core,1,-5,,published
-C2-01,core,2,X/2,,published
-C2-02,core,2,2^N,,published
-C2-03,core,2,X(N+2),,published
-C2-04,core,2,N(2-X),,published
-C2-05,core,2,N(X-1),,published
-C2-06,core,2,X^2,,fan
-C2-07,core,2,N^2,,fan
-C2-08,core,2,3(X+1),,fan
-C2-09,core,2,2(N-X),,fan
-C2-10,core,2,(X+N)/2,,fan
-C2-11,core,2,N/2,,fan
-C2-12,core,2,3X/2,,fan
-C2-13,core,2,-X/2,,fan
-C2-14,core,2,X(N-3),,fan
-C2-15,core,2,(X+1)^2,,fan
-C2-16,core,2,X^2-N,,fan
-C2-17,core,2,10-N^2,,fan
-C2-18,core,2,N(N-X),,fan
-C3-01,core,3,4X/N,,published
-C3-02,core,3,4N/X,,published
-C3-03,core,3,24/X,,published
-C3-04,core,3,1+X(N-2),,published
-C3-05,core,3,(X-N)^2,,published
-C3-06,core,3,-12/X,,fan
-C3-07,core,3,X^2/N,,fan
-C3-08,core,3,(N-X)(N+X),,fan
-C3-09,core,3,2^N/X,,fan
-C3-10,core,3,X(X-N),,fan
-C3-11,core,3,(X-1)(N-1),,fan
-C3-12,core,3,36/(NX),,fan
-C3-13,core,3,X^N,,fan
-C3-14,core,3,(X+N)/(N-1),,fan
-C3-15,core,3,2^X,,fan
-C3-16,core,3,(X^2+N)/X,,fan
-C3-17,core,3,(2X+N)/N,,fan
-C3-18,core,3,N+X/N,,fan
-CE-01,celebrity,3,prime(X),Xth prime,published
-CE-02,celebrity,3,tri(X),Xth triangle number,published
-CE-03,celebrity,3,fib(X),Fib(X),published
-CE-04,celebrity,3,sigma(X),Sum of factors of X,published
-CE-05,celebrity,3,pidigit(X),Xth digit of π,published
-CE-06,celebrity,3,edigit(X),Xth digit of e,published
-LE1-01,limited,1,Y,,fan
-LE1-02,limited,1,2Y,,fan
-LE1-03,limited,1,-Y,,fan
-LE1-04,limited,1,3V,,fan
-LE1-05,limited,1,V+N,,fan
-LE1-06,limited,1,X+Y,,fan
-LE1-07,limited,1,Y-2X,,fan
-LE1-08,limited,1,2V-N,,fan
-LE1-09,limited,1,5-V,,fan
-LE2-01,limited,2,Y/2,,fan
-LE2-02,limited,2,Y^2,,fan
-LE2-03,limited,2,V^2,,fan
-LE2-04,limited,2,Y(N-1),,fan
-LE2-05,limited,2,X(Y-1),,fan
-LE2-06,limited,2,2^V,,fan
-LE2-07,limited,2,(X+Y)/2,,fan
-LE2-08,limited,2,V(X+1),,fan
-LE2-09,limited,2,XY,,fan
-LE3-01,limited,3,N!,,fan
-LE3-02,limited,3,Y!,,fan
-LE3-03,limited,3,(N-1)!,,fan
-LE3-04,limited,3,V!,,fan
-LE3-05,limited,3,24/Y,,fan
-LE3-06,limited,3,N!/X,,fan
-LE3-07,limited,3,Y!/N,,fan
-LE3-08,limited,3,XY/N,,fan
-LE3-09,limited,3,X^V,,fan
+<script type="text/plain" id="cards-csv">id,level,formula,origin
+C1-01,1,6X,published
+C1-02,1,2X+4,published
+C1-03,1,8X,published
+C1-04,1,3X,published
+C1-05,1,4X,published
+C1-06,1,-X,published
+C1-07,1,-2X,published
+C1-08,1,2-2X,published
+C1-09,1,2X-6,published
+C1-10,1,3N,published
+C1-11,1,5N,published
+C1-12,1,-3N,published
+C1-13,1,N-1,published
+C1-14,1,N-2X,published
+C1-15,1,2X+2N,published
+C1-16,1,4,published
+C1-17,1,10,published
+C1-18,1,-5,published
+C2-01,2,X/2,published
+C2-02,2,2^N,published
+C2-03,2,X(N+2),published
+C2-04,2,N(2-X),published
+C2-05,2,N(X-1),published
+C2-06,2,X^2,fan
+C2-07,2,N^2,fan
+C2-08,2,3(X+1),fan
+C2-09,2,2(N-X),fan
+C2-10,2,(X+N)/2,fan
+C2-11,2,N/2,fan
+C2-12,2,3X/2,fan
+C2-13,2,-X/2,fan
+C2-14,2,X(N-3),fan
+C2-15,2,(X+1)^2,fan
+C2-16,2,X^2-N,fan
+C2-17,2,10-N^2,fan
+C2-18,2,N(N-X),fan
+C3-01,3,4X/N,published
+C3-02,3,4N/X,published
+C3-03,3,24/X,published
+C3-04,3,1+X(N-2),published
+C3-05,3,(X-N)^2,published
+C3-06,3,-12/X,fan
+C3-07,3,X^2/N,fan
+C3-08,3,(N-X)(N+X),fan
+C3-09,3,2^N/X,fan
+C3-10,3,X(X-N),fan
+C3-11,3,(X-1)(N-1),fan
+C3-12,3,36/(NX),fan
+C3-13,3,X^N,fan
+C3-14,3,(X+N)/(N-1),fan
+C3-15,3,2^X,fan
+C3-16,3,(X^2+N)/X,fan
+C3-17,3,(2X+N)/N,fan
+C3-18,3,N+X/N,fan
 </script>
-<script>/* 21X trainer - pure game logic (no DOM).
-   Used both by the Node test harness and inlined into the final HTML. */
+<script>/* Train of Thought - the 21X card engine (no DOM): exact rationals, the card formula
+   parser/renderer and the "find X so the hand makes 21" solver. Powers the 21X hand
+   questions in the linear algebra round. Used by Node tests and inlined into the HTML. */
 (function (global) {
   "use strict";
 
-  var MAX_HAND = 5, TARGET = 21, STAND_MS = 60000;
+  var TARGET = 21;
 
   /* ========================= exact rationals ========================= */
-  // Totals can be fractions (X/2, 4X/N, 24/X ...), so anything that decides a
-  // win is computed exactly with BigInt rationals {n, d}: d > 0, fully reduced.
+  // Card values can be fractions (X/2, 4X/N, 24/X ...), so anything that decides a
+  // right answer is computed exactly with BigInt rationals {n, d}: d > 0, fully reduced.
   function babs(a) { return a < 0n ? -a : a; }
   function bgcd(a, b) { a = babs(a); b = babs(b); while (b) { var t = a % b; a = b; b = t; } return a; }
   function Q(n, d) {
@@ -321,7 +304,7 @@ LE3-09,limited,3,X^V,,fan
   function qmul(a, b) { return Q(a.n * b.n, a.d * b.d); }
   function qdiv(a, b) { return b.n === 0n ? null : Q(a.n * b.d, a.d * b.n); }
   function qneg(a) { return { n: -a.n, d: a.d }; }
-  function qcmp(a, b) { var x = a.n * b.d - b.n * a.d; return x > 0n ? 1 : x < 0n ? -1 : 0; }
+  function qeq(a, b) { return !!a && !!b && a.n === b.n && a.d === b.d; }
   function qisInt(a) { return a.d === 1n; }
   function bitlen(b) { return babs(b).toString(2).length; }
   var MAX_BITS = 20000;              // results bigger than this are far past 21 anyway
@@ -334,18 +317,6 @@ LE3-09,limited,3,X^V,,fan
     if ((babs(a.n) !== 1n || a.d !== 1n) && Number(k) * Math.max(bitlen(a.n), bitlen(a.d)) > MAX_BITS) return null;
     var n = a.n ** k, d = a.d ** k;
     return inv ? Q(d, n) : { n: n, d: d };
-  }
-  function qfact(a) {
-    if (!qisInt(a) || a.n < 0n || a.n > 1000n) return null;
-    var r = 1n;
-    for (var i = 2n; i <= a.n; i++) r *= i;
-    return { n: r, d: 1n };
-  }
-  function qnum(a) {
-    var n = Number(a.n), d = Number(a.d);
-    if (isFinite(d)) return n / d;
-    if (!isFinite(n)) { var s = BigInt(bitlen(a.d) - 1000); return Number(a.n >> s) / Number(a.d >> s); }
-    return 0;
   }
 
   /* ---- display ---- */
@@ -364,100 +335,28 @@ LE3-09,limited,3,X^V,,fan
     }
     return null;
   }
-  var HUGE = 999999999999n;
   // "12", "−3", "12.5", "20 2/3"
   function qstr(a) {
     if (!a) return "?";
-    var neg = a.n < 0n, n = babs(a.n), d = a.d, s;
-    if (n / d > HUGE) s = "≈" + Math.abs(qnum(a)).toPrecision(3);
-    else if (d === 1n) s = n.toString();
-    else s = decimalOf(n, d) || ((n / d ? (n / d) + " " : "") + (n % d) + "/" + d);
-    return (neg ? MINUS : "") + s;
+    var n = babs(a.n), d = a.d;
+    var s = d === 1n ? n.toString() : decimalOf(n, d) || ((n / d ? (n / d) + " " : "") + (n % d) + "/" + d);
+    return (a.n < 0n ? MINUS : "") + s;
   }
   // same as qstr, but non-terminating fractions become a small stacked fraction
   function qhtml(a) {
     if (!a) return "?";
     var n = babs(a.n), d = a.d;
-    if (d === 1n || n / d > HUGE || decimalOf(n, d)) return esc(qstr(a));
+    if (d === 1n || decimalOf(n, d)) return esc(qstr(a));
     var ip = n / d;
     return (a.n < 0n ? MINUS : "") + (ip ? ip.toString() : "") +
       '<span class="mf"><span>' + (n % d) + "</span><span>" + d + "</span></span>";
   }
-  function qapprox(a) { return a ? (Math.round(qnum(a) * 100) / 100).toString().replace("-", MINUS) : "?"; }
-
-  /* ======================= celebrity sequences ======================= */
-  // Each Celebrity card is a printed sequence: its value is the term X places along.
-  // Rulebook: for a negative X, count as if X were positive, then negate the result.
-  var primes = [2];
-  function nthPrime(k) {
-    if (k > primes.length) {
-      var lim = Math.max(30, Math.ceil(k * (Math.log(k) + Math.log(Math.log(k + 2)) + 1)));
-      var comp = new Uint8Array(lim + 1);
-      primes = [];
-      for (var i = 2; i <= lim; i++) {
-        if (comp[i]) continue;
-        primes.push(i);
-        for (var j = i * i; j <= lim; j += i) comp[j] = 1;
-      }
-    }
-    return primes[k - 1];
-  }
-  var fibs = [0n, 1n, 1n];
-  function fib(k) { while (fibs.length <= k) fibs.push(fibs[fibs.length - 1] + fibs[fibs.length - 2]); return fibs[k]; }
-  function sigma(k) {
-    var s = 0, r = Math.floor(Math.sqrt(k));
-    for (var i = 1; i <= r; i++) if (k % i === 0) { s += i; if (k / i !== i) s += k / i; }
-    return s;
-  }
-  var DIGITS = 1000, piStr = "", eStr = "";
-  function piDigits() {            // digits after "3." via Machin: pi = 16 atan(1/5) - 4 atan(1/239)
-    if (piStr) return piStr;
-    var scale = 10n ** BigInt(DIGITS + 12);
-    function atanInv(x) {
-      x = BigInt(x);
-      var x2 = x * x, term = scale / x, sum = term, k = 1n, sign = -1n;
-      while (term) { term /= x2; sum += sign * (term / (2n * k + 1n)); sign = -sign; k++; }
-      return sum;
-    }
-    piStr = (16n * atanInv(5) - 4n * atanInv(239)).toString().slice(1, DIGITS + 1);
-    return piStr;
-  }
-  function eDigits() {             // digits after "2." via e = sum 1/k!
-    if (eStr) return eStr;
-    var scale = 10n ** BigInt(DIGITS + 12), term = scale, sum = 0n, k = 1n;
-    while (term) { sum += term; term /= k; k++; }
-    eStr = sum.toString().slice(1, DIGITS + 1);
-    return eStr;
-  }
-  var SEQ = {
-    prime:   { max: 20000, f: function (k) { return BigInt(nthPrime(k)); } },
-    tri:     { max: 1e9,   f: function (k) { var b = BigInt(k); return b * (b + 1n) / 2n; } },
-    fib:     { max: 5000,  f: fib },
-    sigma:   { max: 1e8,   f: function (k) { return BigInt(sigma(k)); } },
-    pidigit: { max: DIGITS, f: function (k) { return BigInt(piDigits()[k - 1]); } },
-    edigit:  { max: DIGITS, f: function (k) { return BigInt(eDigits()[k - 1]); } }
-  };
-  function seqTerm(name, k) {       // k: JS integer -> BigInt, or null when off the card
-    var s = SEQ[name];
-    if (!s || k === 0 || Math.abs(k) > s.max) return null;
-    var v = s.f(Math.abs(k));
-    return k < 0 ? -v : v;
-  }
-  function seqPreview(name, count) {
-    var out = [];
-    for (var k = 1; k <= count; k++) out.push(seqTerm(name, k).toString());
-    return out;
-  }
 
   /* ======================== formula parser ======================== */
-  // Card formulas are written the way they are printed: 2X+4, 4N/X, X(N+2), (X-N)^2, N!,
-  // prime(X). Juxtaposition multiplies; ^ binds tighter than unary minus (-X^2 = -(X^2)).
-  var FN_NAMES = { prime: 1, tri: 1, fib: 1, sigma: 1, pidigit: 1, edigit: 1 };
-  var VARS = { X: 1, N: 1, Y: 1, V: 1 };
-  var OPS = {
-    "+": "+", "-": "-", "−": "-", "–": "-", "*": "*", "×": "*", "·": "*",
-    "/": "/", "÷": "/", "^": "^", "!": "!", "(": "(", ")": ")"
-  };
+  // Card formulas are written the way they are printed: 2X+4, 4N/X, X(N+2), (X-N)^2.
+  // Juxtaposition multiplies; ^ binds tighter than unary minus (-X^2 = -(X^2)).
+  var VARS = { X: 1, N: 1 };
+  var OPS = { "+": "+", "-": "-", "−": "-", "–": "-", "*": "*", "×": "*", "·": "*", "/": "/", "÷": "/", "^": "^", "(": "(", ")": ")" };
   var SUPD = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9" };
   function tokenize(src) {
     var s = String(src), toks = [], i = 0, j, word;
@@ -470,9 +369,8 @@ LE3-09,limited,3,X^V,,fan
       }
       if (/[A-Za-z]/.test(c)) {
         for (j = i; j < s.length && /[A-Za-z]/.test(s[j]); j++);
-        var word = s.slice(i, j);
-        if (FN_NAMES[word.toLowerCase()]) toks.push({ k: "fn", v: word.toLowerCase() });
-        else for (var m = 0; m < word.length; m++) {          // "NX" is N times X
+        word = s.slice(i, j);
+        for (var m = 0; m < word.length; m++) {                  // "NX" is N times X
           var u = word[m].toUpperCase();
           if (!VARS[u]) throw new Error("Unknown symbol '" + word[m] + "' in \"" + s + "\"");
           toks.push({ k: "var", v: u });
@@ -515,14 +413,9 @@ LE3-09,limited,3,X^V,,fan
     function unary() {
       if (isOp("-")) { p++; return { t: "neg", a: unary() }; }
       if (isOp("+")) { p++; return unary(); }
-      var base = postfix();
+      var base = primary();
       if (isOp("^")) { p++; return { t: "^", a: base, b: unary() }; }
       return base;
-    }
-    function postfix() {
-      var a = primary();
-      while (isOp("!")) { p++; a = { t: "!", a: a }; }
-      return a;
     }
     function primary() {
       var t = toks[p];
@@ -530,7 +423,6 @@ LE3-09,limited,3,X^V,,fan
       p++;
       if (t.k === "num") return { t: "num", q: parseNum(t.v) };
       if (t.k === "var") return { t: "var", v: t.v };
-      if (t.k === "fn") { expect("("); var a = expr(); expect(")"); return { t: "fn", f: t.v, a: a }; }
       if (t.v === "(") { var e = expr(); expect(")"); return e; }
       throw new Error("Unexpected '" + t.v + "' in \"" + src + "\"");
     }
@@ -548,19 +440,13 @@ LE3-09,limited,3,X^V,,fan
   }
 
   /* =========================== evaluation =========================== */
-  // Exact evaluation (env values are rationals). null = undefined (÷0, off a sequence card ...)
+  // Exact evaluation (env values are rationals). null = undefined (÷0 ...)
   function evalQ(node, env) {
     var x, y;
     switch (node.t) {
       case "num": return node.q;
       case "var": return env[node.v] || null;
       case "neg": x = evalQ(node.a, env); return x && qneg(x);
-      case "!": x = evalQ(node.a, env); return x && qfact(x);
-      case "fn":
-        x = evalQ(node.a, env);
-        if (!x || !qisInt(x) || babs(x.n) > 1000000000n) return null;
-        y = seqTerm(node.f, Number(x.n));
-        return y === null ? null : Q(y);
     }
     x = evalQ(node.a, env); if (!x) return null;
     y = evalQ(node.b, env); if (!y) return null;
@@ -573,108 +459,32 @@ LE3-09,limited,3,X^V,,fan
     }
     return null;
   }
-  // Fast floating-point evaluation, only used to search for candidate X values.
-  var FACT = [1];
-  for (var fi = 1; fi <= 170; fi++) FACT[fi] = FACT[fi - 1] * fi;
-  function compileF(node) {
-    var a, b, c;
-    switch (node.t) {
-      case "num": c = qnum(node.q); return function () { return c; };
-      case "var": c = node.v; return function (env) { return env[c]; };
-      case "neg": a = compileF(node.a); return function (env) { return -a(env); };
-      case "!":
-        a = compileF(node.a);
-        return function (env) { var v = a(env); return v !== Math.round(v) || v < 0 ? NaN : v > 170 ? Infinity : FACT[v]; };
-      case "fn":
-        a = compileF(node.a); c = node.f;
-        return function (env) {
-          var k = a(env);
-          if (k !== Math.round(k) || Math.abs(k) > 1e9) return NaN;
-          var v = seqTerm(c, k);
-          return v === null ? NaN : Number(v);
-        };
-    }
-    a = compileF(node.a); b = compileF(node.b);
-    switch (node.t) {
-      case "+": return function (env) { return a(env) + b(env); };
-      case "-": return function (env) { return a(env) - b(env); };
-      case "*": return function (env) { return a(env) * b(env); };
-      case "/": return function (env) { var d = b(env); return d === 0 ? NaN : a(env) / d; };
-      case "^": return function (env) {
-        var e = b(env), v = a(env);
-        return e !== Math.round(e) || (v === 0 && e < 0) ? NaN : Math.pow(v, e);
-      };
-    }
-  }
-
-  var Q20 = Q(20), Q21 = Q(21);
-  // "win" (exactly 21) | "ok" (valid, under 21) | "twenty" (20 counts as bust) | "bust" (> 21) | "undef"
-  function classify(total) {
-    if (!total) return "undef";
-    var c = qcmp(total, Q21);
-    if (c === 0) return "win";
-    if (c > 0) return "bust";
-    return qcmp(total, Q20) === 0 ? "twenty" : "ok";
-  }
-  function isValid(status) { return status === "win" || status === "ok"; }
-  // env: plain integers {X, N, Y, V}
-  function evalHand(hand, env) {
-    var qe = { X: Q(env.X == null ? 1 : env.X), N: Q(env.N), V: Q(env.V == null ? 1 : env.V) };
-    if (env.Y != null) qe.Y = Q(env.Y);
-    var values = [], total = Q(0);
+  // N is the number of cards in the hand. -> {values: [rational|null], total: rational|null}
+  function evalHand(hand, x) {
+    var env = { X: Q(x), N: Q(hand.length) }, values = [], total = Q(0);
     for (var i = 0; i < hand.length; i++) {
-      var v = evalQ(hand[i].ast, qe);
+      var v = evalQ(hand[i].ast, env);
       values.push(v);
       total = total && v ? qadd(total, v) : null;
     }
-    return { values: values, total: total, status: classify(total) };
+    return { values: values, total: total };
   }
-  function handVars(hand) {
-    var out = {};
-    hand.forEach(function (c) { for (var k in c.vars) out[k] = true; });
+  var Q21 = Q(TARGET);
+  function makes21(hand, x) { return x !== 0 && Math.floor(x) === x && qeq(evalHand(hand, x).total, Q21); }
+  // Every whole X in [-xMax, xMax] (never 0) that makes exactly 21: smallest |X| first, positive first.
+  function solveX(hand, xMax) {
+    var out = [];
+    for (var k = 1; k <= xMax; k++) { if (makes21(hand, k)) out.push(k); if (makes21(hand, -k)) out.push(-k); }
     return out;
   }
-  function handIcons(hand) { return hand.reduce(function (s, c) { return s + c.icons; }, 0); }
-
-  /* ============================= solver ============================= */
-  // Searches whole-number X (and positive Y when a Y card is present) for exact 21s
-  // and for the best valid total (<= 21, never exactly 20).
-  function analyze(hand, ctx, opts) {
-    opts = opts || {};
-    var vars = handVars(hand), hasY = !!vars.Y;
-    var xMax = vars.X ? (hasY ? Math.min(opts.xMax || 1000, opts.xMaxY || 200) : (opts.xMax || 1000)) : 1;
-    var yMax = hasY ? (opts.yMax || 50) : 1, maxSol = opts.maxSolutions || 8;
-    var env = { X: 1, N: hand.length, V: ctx.V || 1, Y: NaN };
-    var sols = [], cands = [], x, y, s, i;
-    for (y = 1; y <= yMax; y++) {
-      if (hasY) env.Y = y;
-      for (s = 1; s <= 2 * xMax; s++) {
-        x = s & 1 ? (s + 1) >> 1 : -(s >> 1);                     // 1, -1, 2, -2, ...
-        if (!vars.X && x < 0) continue;
-        env.X = x;
-        var f = 0, mag = 0;
-        for (i = 0; i < hand.length; i++) { var v = hand[i].f(env); f += v; mag += Math.abs(v); }
-        if (f !== f || !isFinite(f)) continue;
-        var tol = 1e-9 * (1 + mag);
-        if (f > 21 + tol) continue;
-        cands.push([f, x, hasY ? y : null]);
-        if (f >= 21 - tol && sols.length < maxSol * 3) {
-          var ev = evalHand(hand, { X: x, Y: hasY ? y : null, N: env.N, V: env.V });
-          if (ev.status === "win") sols.push({ x: x, y: hasY ? y : null });
-        }
-      }
-    }
-    sols.sort(function (a, b) { return (Math.abs(a.x) + (a.y || 0)) - (Math.abs(b.x) + (b.y || 0)); });
-    cands.sort(function (a, b) { return b[0] - a[0]; });            // stable: simpler X first on ties
-    var best = null, bestF = null;
-    for (i = 0; i < cands.length && i < 200; i++) {
-      if (bestF !== null && cands[i][0] < bestF - 1e-6) break;
-      var e = evalHand(hand, { X: cands[i][1], Y: cands[i][2], N: env.N, V: env.V });
-      if (!isValid(e.status)) continue;
-      if (!best || qcmp(e.total, best.total) > 0) best = { x: cands[i][1], y: cands[i][2], total: e.total };
-      if (bestF === null) bestF = cands[i][0];
-    }
-    return { solutions: sols.slice(0, maxSol), best: best, needsX: !!vars.X, needsY: hasY };
+  // {a, b} when the hand's total is a X + b for every X, else null. Cards are at most
+  // degree 3 in X (with at most X in the denominator), so agreeing on 6 points proves it.
+  function linearForm(hand) {
+    var t = [];
+    for (var x = 1; x <= 6; x++) { var ev = evalHand(hand, x).total; if (!ev) return null; t.push(ev); }
+    var a = qsub(t[1], t[0]);
+    for (var i = 2; i < t.length; i++) if (!qeq(qsub(t[i], t[i - 1]), a)) return null;
+    return { a: a, b: qsub(t[0], a) };
   }
 
   /* ============================ cards ============================ */
@@ -695,7 +505,6 @@ LE3-09,limited,3,X^V,,fan
     if (field !== "" || row.length) { row.push(field); rows.push(row); }
     return rows;
   }
-  var SETS = { core: "Core", celebrity: "Celebrity", limited: "V & Y" };
   function loadCards(csvText) {
     var rows = parseCSV(csvText).filter(function (r) { return r.join("").trim(); });
     var head = rows.shift().map(function (h) { return h.trim().toLowerCase(); });
@@ -706,32 +515,20 @@ LE3-09,limited,3,X^V,,fan
       if (!formula) return;
       var ast;
       try { ast = parse(formula); } catch (e) { throw new Error("Card " + (get("id") || cards.length + 1) + ": " + e.message); }
-      var level = Math.min(3, Math.max(1, parseInt(get("level"), 10) || 1));
-      var set = SETS[get("set").toLowerCase()] ? get("set").toLowerCase() : "core";
       var card = {
-        i: cards.length, id: get("id") || "card" + cards.length, set: set, level: level,
-        formula: formula, name: get("name"), origin: get("origin"),
-        ast: ast, vars: varsOf(ast), icons: level, f: compileF(ast), seq: ast.t === "fn" ? ast.f : null
+        i: cards.length, id: get("id") || "card" + cards.length, level: Math.min(3, Math.max(1, parseInt(get("level"), 10) || 1)),
+        formula: formula, origin: get("origin"), ast: ast, vars: varsOf(ast)
       };
       card.r = render(ast);
-      card.text = card.name || textOf(ast);
+      card.text = textOf(ast);
       cards.push(card);
     });
     return cards;
-  }
-  // cfg: {levels: [1,2,3], celebrity: bool, limited: bool}
-  function deckIds(cards, cfg) {
-    return cards.filter(function (c) {
-      if (c.set === "celebrity") return !!cfg.celebrity;
-      if (c.set === "limited" && !cfg.limited) return false;
-      return cfg.levels.indexOf(c.level) >= 0;
-    }).map(function (c) { return c.i; });
   }
 
   /* ---- formula rendering: AST -> HTML with stacked fractions & superscripts ---- */
   // Each result carries an estimated width (em) so cards can size the formula to fit,
   // plus the kind of glyph at each end so juxtaposition never reads ambiguously (2·3).
-  var FN_TXT = { prime: "p", tri: "T", fib: "Fib", sigma: "σ", pidigit: "π", edigit: "e" };
   function paren(r) { return { h: '<span class="p">(</span>' + r.h + '<span class="p">)</span>', w: r.w + 0.7, L: "p", R: "p" }; }
   function isSum(n) { return n.t === "+" || n.t === "-"; }
   function rn(node) {
@@ -739,9 +536,6 @@ LE3-09,limited,3,X^V,,fan
     switch (node.t) {
       case "num": s = qstr(node.q); return { h: '<span class="n">' + esc(s) + "</span>", w: 0.56 * s.length, L: "d", R: "d" };
       case "var": return { h: '<i class="v">' + node.v + "</i>", w: 0.72, L: "v", R: "v" };
-      case "fn":
-        A = paren(rn(node.a)); s = FN_TXT[node.f];
-        return { h: '<span class="fnm">' + esc(s) + "</span>" + A.h, w: 0.6 * s.length + A.w, L: "v", R: "p" };
       case "neg":
         A = rn(node.a); if (isSum(node.a)) A = paren(A);
         return { h: '<span class="o">' + MINUS + "</span>" + A.h, w: 0.62 + A.w, L: "o", R: A.R };
@@ -767,23 +561,19 @@ LE3-09,limited,3,X^V,,fan
         };
       case "^":
         A = rn(node.a); B = rn(node.b);
-        var atom = node.a.t === "var" || node.a.t === "fn" || (node.a.t === "num" && node.a.q.n >= 0n && node.a.q.d === 1n);
+        var atom = node.a.t === "var" || (node.a.t === "num" && node.a.q.n >= 0n && node.a.q.d === 1n);
         if (!atom) A = paren(A);
         return { h: A.h + '<sup class="ex">' + B.h + "</sup>", w: A.w + 0.62 * B.w + 0.05, L: A.L, R: "e" };
-      case "!":
-        A = rn(node.a); if (node.a.t !== "var" && node.a.t !== "num") A = paren(A);
-        return { h: A.h + '<span class="o">!</span>', w: A.w + 0.32, L: A.L, R: "o" };
     }
   }
   function render(ast) { return rn(ast); }
-  // plain-text version (aria labels, history)
+  // plain-text version (aria labels)
   var SUP = { "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
   function textOf(node) {
     function wrap(n) { var s = textOf(n); return isSum(n) || n.t === "neg" ? "(" + s + ")" : s; }
     switch (node.t) {
       case "num": return qstr(node.q);
       case "var": return node.v;
-      case "fn": return node.f + "(" + textOf(node.a) + ")";
       case "neg": return MINUS + (isSum(node.a) ? "(" + textOf(node.a) + ")" : textOf(node.a));
       case "+": return textOf(node.a) + " + " + textOf(node.b);
       case "-": return textOf(node.a) + " " + MINUS + " " + wrap(node.b);
@@ -794,7 +584,6 @@ LE3-09,limited,3,X^V,,fan
         var base = node.a.t === "var" || node.a.t === "num" ? textOf(node.a) : "(" + textOf(node.a) + ")";
         var ex = textOf(node.b);
         return base + (/^[0-9]+$/.test(ex) ? ex.split("").map(function (ch) { return SUP[ch]; }).join("") : "^" + ex);
-      case "!": return (node.a.t === "var" || node.a.t === "num" ? textOf(node.a) : "(" + textOf(node.a) + ")") + "!";
     }
     return "";
   }
@@ -809,30 +598,36 @@ LE3-09,limited,3,X^V,,fan
   function shapesHtml(level) {
     return (level >= 3 ? SHAPE_SVG.pent : "") + (level >= 2 ? SHAPE_SVG.sq : "") + SHAPE_SVG.tri;
   }
-  var SEQ_INFO = {
-    prime: "the Xth prime", tri: "the Xth triangle number", fib: "the Xth Fibonacci number",
-    sigma: "the sum of the factors of X", pidigit: "the Xth digit of π after the point", edigit: "the Xth digit of e after the point"
-  };
-  function celebBody(card, terms) {
-    var list = seqPreview(card.seq, terms || 12);
-    var lead = card.seq === "pidigit" ? "3." : card.seq === "edigit" ? "2." : "";
-    return '<div class="celeb"><div class="ct">' + esc(card.name || FN_TXT[card.seq] + "(X)") + "</div>" +
-      '<div class="cs">' + (lead ? '<span class="lead">' + lead + "</span>" : "") +
-      list.map(function (t) { return "<span>" + t + "</span>"; }).join("") + "<span>…</span></div></div>";
-  }
-  // o: {value: rational|null (badge), vcls, cls, attrs}
+  // o: {value: rational|null (badge), vcls}
   function cardHtml(card, o) {
     o = o || {};
-    var body = card.seq ? celebBody(card) :
-      '<div class="fx" style="--fw:' + Math.max(1.6, card.r.w).toFixed(2) + '">' + card.r.h + "</div>";
     var badge = o.value !== undefined ? '<div class="val ' + (o.vcls || "") + '">' + (o.value ? qhtml(o.value) : "?") + "</div>" : "";
-    return '<div class="card set-' + card.set + " lv" + card.level + (o.cls ? " " + o.cls : "") + '"' + (o.attrs || "") +
-      ' role="img" aria-label="' + esc(card.text + ", level " + card.level) + '">' +
+    return '<div class="card lv' + card.level + '" role="img" aria-label="' + esc(card.text) + '">' +
       '<span class="cn tl">' + shapesHtml(card.level) + '</span><span class="cn br">' + shapesHtml(card.level) + "</span>" +
-      body + badge + "</div>";
+      '<div class="fx" style="--fw:' + Math.max(1.6, card.r.w).toFixed(2) + '">' + card.r.h + "</div>" + badge + "</div>";
   }
 
-  /* ============================ RNG & deck ============================ */
+  var api = {
+    TARGET: TARGET, MINUS: MINUS,
+    Q: Q, qadd: qadd, qsub: qsub, qmul: qmul, qdiv: qdiv, qpow: qpow, qeq: qeq, qstr: qstr, qhtml: qhtml, esc: esc,
+    parse: parse, evalQ: evalQ, render: render, textOf: textOf,
+    evalHand: evalHand, makes21: makes21, solveX: solveX, linearForm: linearForm,
+    parseCSV: parseCSV, loadCards: loadCards, cardHtml: cardHtml, shapesHtml: shapesHtml
+  };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  global.X21 = api;
+})(typeof window !== "undefined" ? window : this);
+</script>
+<script>/* Train of Thought - question generators, daily rounds, streaks (no DOM).
+   Used both by the Node test harness and inlined into the final HTML. */
+(function (global) {
+  "use strict";
+  var X21 = global.X21 || require("./cards.js");
+
+  var ROUND = 10, GEN = "tot1";          // bump GEN when generators change (it reseeds every daily set)
+  var M = "−";
+
+  /* ============================ RNG ============================ */
   function mulberry32(seed) {
     var a = seed >>> 0;
     return function () {
@@ -843,183 +638,792 @@ LE3-09,limited,3,X^V,,fan
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
-  function shuffle(arr, rng) {
-    for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(rng() * (i + 1)), t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+  function hashStr(s) {                     // FNV-1a
+    var h = 0x811c9dc5;
+    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return h >>> 0;
+  }
+  function ri(r, a, b) { return a + Math.floor(r() * (b - a + 1)); }
+  function pick(r, arr) { return arr[Math.floor(r() * arr.length)]; }
+  function nz(r, a, b) { var v; do v = ri(r, a, b); while (v === 0); return v; }
+  function sgn(r) { return r() < 0.5 ? -1 : 1; }
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a; }
+  function shuffle(arr, r) {
+    for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)), t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
     return arr;
   }
-  function Deck(ids, rng) { this.rng = rng || Math.random; this.pile = shuffle(ids.slice(), this.rng); this.discard = []; this.reshuffles = 0; }
-  // When the deck runs out, the discards are shuffled to form a new deck.
-  Deck.prototype.draw = function () {
-    if (!this.pile.length && this.discard.length) { this.pile = shuffle(this.discard, this.rng); this.discard = []; this.reshuffles++; }
-    return this.pile.length ? this.pile.pop() : null;
-  };
-  Deck.prototype.toss = function (ids) { for (var i = 0; i < ids.length; i++) this.discard.push(ids[i]); };
-  Deck.prototype.left = function () { return this.pile.length + this.discard.length; };
 
-  /* ======================= single-player game ======================= */
-  // Official solo rules: race to 21 difficulty icons in your score area. Mulligan any
-  // time; draw up to 5 cards; there is no standing; V = 1 + hands in your score area.
-  function Solo(cards, ids, opts) {
-    opts = opts || {};
-    this.cards = cards;
-    this.target = opts.target || TARGET;
-    this.maxHand = opts.maxHand || MAX_HAND;
-    this.endless = !!opts.endless;
-    this.deck = new Deck(ids, opts.rng);
-    this.hand = []; this.scored = []; this.outOfPlay = [];
-    this.icons = 0; this.done = false;
-    this.stats = { calls: 0, wrong: 0, mulligans: 0, draws: 0, hands: 0 };
-    this.deal();
+  /* ======================== HTML & text helpers ======================== */
+  function sn(n) { return n < 0 ? M + (-n) : String(n); }                  // −5
+  function sp(n) { return n < 0 ? "(" + M + (-n) + ")" : String(n); }      // (−5), for products
+  function v(name) { return '<i class="v">' + name + "</i>"; }
+  function o(op) { return '<span class="o">' + op + "</span>"; }          // spaced binary operator
+  var EQ = '<span class="o">=</span>';
+  function w(text) { return '<span class="w">' + text + "</span>"; }      // words inside maths
+  function fn(name) { return '<span class="fn">' + name + "</span>"; }    // upright operator names: det, tr
+  function frac(n, d) { return '<span class="fr"><span class="fr-n">' + n + '</span><span class="fr-d">' + d + "</span></span>"; }
+  function pw(b, e) { return b + '<sup class="ex">' + e + "</sup>"; }
+  function sub(s) { return "<sub>" + s + "</sub>"; }
+  function cell(x) { return "<span>" + (typeof x === "number" ? sn(x) : x) + "</span>"; }
+  function mat(rows, det) {
+    return '<span class="mat' + (det ? " det" : "") + '" style="--c:' + rows[0].length + '">' +
+      rows.map(function (row) { return row.map(cell).join(""); }).join("") + "</span>";
   }
-  Solo.prototype.handCards = function () { var c = this.cards; return this.hand.map(function (i) { return c[i]; }); };
-  Solo.prototype.V = function () { return 1 + this.scored.length; };
-  Solo.prototype.take = function () {
-    var id = this.deck.draw();
-    if (id === null && this.outOfPlay.length) {      // tiny custom decks only: recycle scored cards (points are banked)
-      this.deck.toss(this.outOfPlay); this.outOfPlay = []; id = this.deck.draw();
-    }
-    return id;
-  };
-  Solo.prototype.deal = function () {
-    this.hand = [];
-    for (var k = 0; k < 2; k++) { var id = this.take(); if (id !== null) this.hand.push(id); }
-    this.stats.hands++;
-  };
-  Solo.prototype.canDraw = function () {
-    return !this.done && this.hand.length < this.maxHand && this.deck.left() + this.outOfPlay.length > 0;
-  };
-  Solo.prototype.draw = function () {
-    if (!this.canDraw()) return null;
-    var id = this.take();
-    if (id === null) return null;
-    this.hand.push(id); this.stats.draws++;
-    return id;
-  };
-  Solo.prototype.mulligan = function () {
-    if (this.done) return;
-    this.deck.toss(this.hand); this.stats.mulligans++;
-    this.deal();
-  };
-  Solo.prototype.check = function (x, y) {
-    return evalHand(this.handCards(), { X: x, Y: y, N: this.hand.length, V: this.V() });
-  };
-  Solo.prototype.call = function (x, y) {
-    var ev = this.check(x, y), hand = this.hand, cards = this.handCards();
-    this.stats.calls++;
-    if (ev.status !== "win") { this.stats.wrong++; return { ok: false, ev: ev }; }
-    var icons = handIcons(cards);
-    this.scored.push({ ids: hand.slice(), x: x, y: y, N: hand.length, V: this.V(), icons: icons });
-    this.icons += icons;
-    this.outOfPlay = this.outOfPlay.concat(hand);
-    if (!this.endless && this.icons >= this.target) { this.done = true; this.hand = []; }
-    else this.deal();
-    return { ok: true, ev: ev, icons: icons, done: this.done, ids: hand.slice() };
-  };
+  function col(vals) { return mat(vals.map(function (x) { return [x]; })); }
+  function sys(lines) { return '<span class="sys">' + lines.map(function (l) { return "<span>" + l + "</span>"; }).join("") + "</span>"; }
+  function stack(lines) { return '<span class="stk">' + lines.map(function (l) { return "<span>" + l + "</span>"; }).join("") + "</span>"; }
+  // [[coef, name], [const]] -> "3x − y + 4"; zero terms are dropped
+  function lin(terms) {
+    var out = "";
+    terms.forEach(function (t) {
+      var c = t[0], name = t[1] || "";
+      if (!c) return;
+      var a = Math.abs(c), body = name ? (a === 1 ? "" : a) + name : String(a);
+      out += out ? o(c < 0 ? M : "+") + body : (c < 0 ? M : "") + body;
+    });
+    return out || "0";
+  }
+  // [12, −5, −4] -> "12 − 5 − 4"
+  function sumText(vals) {
+    return vals.map(function (x, i) { return i === 0 ? sn(x) : x < 0 ? " " + M + " " + -x : " + " + x; }).join("");
+  }
+  // [[3, 4], [−1, 5]] -> "3·4 + (−1)·5"
+  function prodSum(pairs) {
+    return pairs.map(function (p, i) { return (i ? " + " : "") + sp(p[0]) + "·" + sp(p[1]); }).join("");
+  }
+  function dotWhy(pairs) {
+    var terms = pairs.map(function (p) { return p[0] * p[1]; });
+    var total = terms.reduce(function (s, x) { return s + x; }, 0);
+    return prodSum(pairs) + " = " + (pairs.length > 1 ? sumText(terms) + " = " : "") + sn(total);
+  }
+  var ORD = ["", "first", "second", "third"];
 
-  /* ========================= duel rules & bot ========================= */
-  // Multiplayer rules used by the duel: call 21 to win instantly (a wrong call knocks you out
-  // of that game); stand to lock your total and start a 60s timer the other player must beat.
-  // Ties go to the player who stood. Exactly 20 is bust, as is anything over 21.
-  var BOTS = {
-    easy:   { label: "Easy",   range: 6,  yMax: 6,  think: [15000, 24000], stand: 17 },
-    medium: { label: "Medium", range: 15, yMax: 10, think: [8000, 14000],  stand: 18 },
-    hard:   { label: "Hard",   range: 60, yMax: 20, think: [4000, 7000],   stand: 19 }
-  };
-  function botCfg(level) { return BOTS[level] || BOTS.medium; }
-  // A bot "takes time to think" in proportion to how hard its hand looks.
-  function botThinkMs(level, hand, rng) {
-    var c = botCfg(level), t = c.think[0] + (rng || Math.random)() * (c.think[1] - c.think[0]);
-    return Math.round(t * (0.6 + 0.12 * handIcons(hand)));
+  /* ============================ templates ============================ */
+  // A template turns (rng, tier 1-3, ctx) into a question:
+  //   {prompt, html, label, answer, why, check?}   (answers are always whole numbers)
+  // fam groups templates so a round mixes its topics.
+  var MENTAL = [], LINEAR = [];
+  function T(list, type, tiers, fam, gen) { list.push({ type: type, tiers: tiers, fam: fam, gen: gen }); }
+
+  /* ------------------------- mental maths ------------------------- */
+  function addWhy(a, b) {
+    var unit = b >= 100 ? 100 : 10, B = Math.round(b / unit) * unit, d = B - b;
+    if (d > 0 && d <= unit * 0.3) return a + " + " + B + " " + M + " " + d + " = " + (a + B) + " " + M + " " + d + " = " + (a + b);
+    var hi = b - b % unit, lo = b % unit;
+    if (!hi || !lo) return a + " + " + b + " = " + (a + b);
+    return a + " + " + hi + " = " + (a + hi) + ", then + " + lo + " = " + (a + b);
   }
-  // opp: null, or {total} when the human has stood (the bot can't stand; it must beat that).
-  function botDecide(hand, ctx, level, opp) {
-    var c = botCfg(level);
-    var an = analyze(hand, ctx, { xMax: c.range, yMax: c.yMax, maxSolutions: 1 });
-    if (an.solutions.length) return { act: "call", x: an.solutions[0].x, y: an.solutions[0].y };
-    var best = an.best, room = hand.length < MAX_HAND;
-    var keep = best ? { x: best.x, y: best.y, total: best.total } : null;
-    if (opp) {
-      if (best && qcmp(best.total, opp.total) > 0) return extend({ act: "hold" }, keep);
-      if (room) return { act: "draw" };
-      return { act: "stuck" };
+  T(MENTAL, "add", [1, 2, 3], "arith", function (r, t) {
+    var a, b;
+    if (t === 1) do { a = ri(r, 21, 89); b = ri(r, 12, 89); } while (a % 10 + b % 10 < 10);
+    else if (t === 2) do { a = ri(r, 120, 899); b = ri(r, 120, 899); } while (a % 10 + b % 10 < 10 && a % 100 + b % 100 < 100);
+    else do { a = ri(r, 1200, 8999); b = ri(r, 1200, 4999); } while (a % 100 + b % 100 < 100);
+    return { prompt: "Add", html: a + o("+") + b, answer: a + b, why: addWhy(a, b) };
+  });
+
+  function subWhy(a, b) {
+    if (a === 1000 || a === 10000) {
+      return "Take each digit of " + b + " from 9, and the last from 10: " + (a - b);
     }
-    if (best && (!room || qnum(best.total) >= c.stand - 0.75 * (hand.length - 2))) return extend({ act: "stand" }, keep);
-    return room ? { act: "draw" } : { act: "stuck" };
+    var unit = b >= 100 ? 100 : 10, B = Math.ceil(b / unit) * unit, d = B - b;
+    if (d > 0 && d <= unit * 0.4) return a + " " + M + " " + B + " + " + d + " = " + (a - B) + " + " + d + " = " + (a - b);
+    var hi = b - b % unit, lo = b % unit;
+    if (!hi || !lo) return a + " " + M + " " + b + " = " + (a - b);
+    return a + " " + M + " " + hi + " = " + (a - hi) + ", then " + M + " " + lo + " = " + (a - b);
   }
-  // After the human stands, the bot's whole reply is decided up front (the human is locked
-  // and can't touch the deck), so the UI can replay it in real time or skip straight to the end.
-  function botTimeline(cards, ids, draw, ctx, level, oppTotal, budgetMs, rng) {
-    var events = [], t = 0, h = ids.slice();
-    for (;;) {
-      var hc = h.map(function (i) { return cards[i]; });
-      t += botThinkMs(level, hc, rng);
-      if (t > budgetMs) break;
-      var d = botDecide(hc, ctx, level, { total: oppTotal });
-      if (d.act === "draw") {
-        var id = draw();
-        if (id === null) break;
-        h.push(id); events.push({ t: t, act: "draw", id: id });
-        t += 700;
-        continue;
+  T(MENTAL, "sub", [1, 2, 3], "arith", function (r, t) {
+    var a, b;
+    if (t === 1) do { a = ri(r, 52, 99); b = ri(r, 13, a - 10); } while (a % 10 >= b % 10);
+    else if (t === 2) do { a = ri(r, 300, 999); b = ri(r, 110, a - 60); } while (a % 10 >= b % 10 && a % 100 >= b % 100);
+    else if (r() < 0.35) { a = pick(r, [1000, 10000]); do b = a === 1000 ? ri(r, 123, 987) : ri(r, 1234, 8765); while (b % 10 === 0); }
+    else do { a = ri(r, 2000, 9999); b = ri(r, 1100, a - 300); } while (a % 100 >= b % 100);
+    return { prompt: "Subtract", html: a + o(M) + b, answer: a - b, why: subWhy(a, b) };
+  });
+
+  function mulWhy(a, b) {
+    var x, y, Y, d, hi, lo;
+    if (a <= 12 && b <= 12) {
+      if (a === 11 || a === 12) return "10 × " + b + " + " + (a - 10) + " × " + b + " = " + 10 * b + " + " + (a - 10) * b + " = " + a * b;
+      if (b === 11 || b === 12) return a + " × 10 + " + a + " × " + (b - 10) + " = " + 10 * a + " + " + a * (b - 10) + " = " + a * b;
+      return a + " × " + b + " = " + a * b;
+    }
+    if (b < 10) { hi = a - a % 10; lo = a % 10; return hi + " × " + b + " + " + lo + " × " + b + " = " + hi * b + " + " + lo * b + " = " + a * b; }
+    for (var k = 0; k < 2; k++) {                 // round whichever factor is close to a multiple of 10
+      x = k ? b : a; y = k ? a : b;
+      if (y % 10 >= 8) { Y = y + 10 - y % 10; d = Y - y; return x + " × " + Y + " " + M + " " + x + " × " + d + " = " + x * Y + " " + M + " " + x * d + " = " + a * b; }
+    }
+    x = Math.max(a, b); y = Math.min(a, b); hi = y - y % 10; lo = y % 10;
+    return x + " × " + hi + " + " + x + " × " + lo + " = " + x * hi + " + " + x * lo + " = " + a * b;
+  }
+  T(MENTAL, "mul", [1, 2, 3], "arith", function (r, t) {
+    var a, b;
+    if (t === 1) do { a = ri(r, 3, 12); b = ri(r, 3, 12); } while (a === 10 || b === 10 || (a < 6 && b < 6));
+    else if (t === 2) { do a = ri(r, 13, 99); while (a % 10 === 0); b = ri(r, 3, 9); }
+    else do { a = ri(r, 13, 99); b = ri(r, 13, 99); } while (a % 10 === 0 || b % 10 === 0 || a === 11 || b === 11);
+    return { prompt: "Multiply", html: a + o("×") + b, answer: a * b, why: mulWhy(a, b) };
+  });
+
+  T(MENTAL, "div", [1, 2, 3], "arith", function (r, t) {
+    var b, q;
+    if (t === 1) do { b = ri(r, 3, 12); q = ri(r, 3, 12); } while (b === 10 || q === 10);
+    else if (t === 2) { b = ri(r, 3, 9); do q = ri(r, 14, 199); while (q * b < 100 || q % 10 === 0); }
+    else { do b = ri(r, 13, 29); while (b === 20); do q = ri(r, 12, 89); while (q % 10 === 0); }
+    var a = b * q, hi = q - q % 10, lo = q % 10;
+    var why = q <= 12 ? b + " × " + q + " = " + a :
+      a + " = " + b * hi + " + " + b * lo + " = " + b + " × " + hi + " + " + b + " × " + lo + ", so " + hi + " + " + lo + " = " + q;
+    return { prompt: "Divide", html: a + o("÷") + b, answer: q, why: why };
+  });
+
+  function sqWhy(n) {
+    if (n % 10 === 5) { var t = (n - 5) / 10; return t * 10 + " × " + (t + 1) * 10 + " + 25 = " + t * (t + 1) * 100 + " + 25 = " + n * n; }
+    var R = Math.round(n / 10) * 10, d = n - R, s = d < 0 ? " " + M + " " : " + ";
+    return "(" + R + s + Math.abs(d) + ")² = " + R * R + s + Math.abs(2 * R * d) + " + " + d * d + " = " + n * n;
+  }
+  T(MENTAL, "sq", [2, 3], "num", function (r, t) {
+    var n; do n = t === 2 ? ri(r, 13, 25) : ri(r, 26, 99); while (n % 10 === 0);
+    return { prompt: "Square", html: pw(n, 2), answer: n * n, why: sqWhy(n) };
+  });
+
+  function sqrtWhy(n) {
+    var N = n * n;
+    if (n <= 25) return n + "² = " + N;
+    var lo = n - n % 10, hi = lo + 10, L = N % 10, mid = lo + 5, cands = [];
+    for (var c = 1; c <= 9; c++) if (c * c % 10 === L) cands.push(lo + c);
+    var s = lo + "² = " + lo * lo + " and " + hi + "² = " + hi * hi + ". It ends in " + L + ", so " + cands.join(" or ");
+    if (cands.length === 1) return s;
+    return s + ". " + (N < mid * mid ? N + " < " : N + " > ") + mid + "² = " + mid * mid + ", so " + n;
+  }
+  T(MENTAL, "sqrt", [2, 3], "num", function (r, t) {
+    var n; do n = t === 2 ? ri(r, 11, 25) : ri(r, 26, 99); while (n % 10 === 0);
+    return { prompt: "Square root", html: '<span class="rt">√<span>' + n * n + "</span></span>", answer: n, why: sqrtWhy(n) };
+  });
+
+  // how to take p% of v in your head
+  function pctWhy(p, v) {
+    var x = p * v / 100, ten = v / 10;
+    if (p === 50) return "Half of " + v + " = " + x;
+    if (p === 25) return v + " ÷ 4 = " + x;
+    if (p === 75) return v + " ÷ 4 = " + v / 4 + ", × 3 = " + x;
+    if (p === 20) return v + " ÷ 5 = " + x;
+    if (p === 10) return v + " ÷ 10 = " + x;
+    if (p === 5) return "10% = " + ten + ", half of that = " + x;
+    if (p % 10 === 0) return "10% = " + ten + ", × " + p / 10 + " = " + x;
+    if (p % 10 === 5) return "10% = " + ten + ", 5% = " + ten / 2 + " → " + (p - 5) / 10 + " × " + ten + " + " + ten / 2 + " = " + x;
+    if (p === 12) return "10% = " + ten + ", 2% = " + v / 50 + " → " + x;
+    return p + "% of " + v + " = " + v + "% of " + p + " = " + x;   // swap trick (4%, 8% of 25, 75 ...)
+  }
+  function pctPick(r, p, lo, hi) { var step = 100 / gcd(p, 100); return step * ri(r, Math.ceil(lo / step), Math.floor(hi / step)); }
+  T(MENTAL, "pct", [1, 2, 3], "pct", function (r, t) {
+    var p, val;
+    if (t === 1) { p = pick(r, [10, 20, 25, 50, 75, 5]); val = pctPick(r, p, 20, 400); }
+    else if (t === 2) {
+      p = pick(r, [15, 35, 45, 12, 30, 40, 60, 65, 4, 8]);
+      val = p === 4 || p === 8 ? pick(r, [25, 50, 75, 125, 150, 175, 225, 250]) : pctPick(r, p, 40, 800);
+    }
+    else {
+      p = pick(r, [5, 10, 15, 20, 25, 30, 35, 40, 12, 60]); val = pctPick(r, p, 60, 900);
+      var up = r() < 0.5, x = p * val / 100;
+      return { prompt: "Percentage change", html: val + " " + w(up ? "increased by" : "decreased by") + " " + p + "%",
+        answer: up ? val + x : val - x, why: pctWhy(p, val) + (up ? ", " + val + " + " + x : ", " + val + " " + M + " " + x) + " = " + (up ? val + x : val - x) };
+    }
+    return { prompt: "Percentage", html: p + "% " + w("of") + " " + val, answer: p * val / 100, why: pctWhy(p, val) };
+  });
+
+  T(MENTAL, "frac", [2, 3], "pct", function (r, t) {
+    var b = t === 2 ? pick(r, [3, 4, 5, 6, 8]) : pick(r, [7, 9, 12, 15, 16]), a;
+    do a = ri(r, 1, b - 1); while (gcd(a, b) !== 1 || (a === 1 && r() < 0.6));
+    var k = t === 2 ? ri(r, 4, 30) : ri(r, 6, 25), val = b * k;
+    return { prompt: "Fraction of", html: frac(a, b) + " " + w("of") + " " + val, answer: a * k,
+      why: val + " ÷ " + b + " = " + k + (a > 1 ? ", × " + a + " = " + a * k : "") };
+  });
+
+  T(MENTAL, "ops", [1, 2, 3], "arith", function (r, t) {
+    var a, b, c, d, e, p, q, form = t === 1 ? ri(r, 0, 1) : t === 2 ? ri(r, 2, 4) : ri(r, 5, 7);
+    var X = o("×"), D = o("÷"), P = o("+"), S = o(M);
+    switch (form) {
+      case 0: a = ri(r, 2, 30); b = ri(r, 2, 9); c = ri(r, 2, 12); p = b * c;
+        return { prompt: "Order of operations", html: a + P + b + X + c, answer: a + p, why: "× first: " + b + " × " + c + " = " + p + ", then " + a + " + " + p + " = " + (a + p) };
+      case 1: a = ri(r, 3, 12); b = ri(r, 3, 9); p = a * b; c = ri(r, 2, p - 1);
+        return { prompt: "Order of operations", html: a + X + b + S + c, answer: p - c, why: a + " × " + b + " = " + p + ", then " + p + " " + M + " " + c + " = " + (p - c) };
+      case 2: case 4: a = ri(r, 3, 12); b = ri(r, 3, 9); c = ri(r, 3, 12); d = ri(r, 3, 9); p = a * b; q = c * d;
+        if (form === 2) return { prompt: "Order of operations", html: a + X + b + P + c + X + d, answer: p + q, why: p + " + " + q + " = " + (p + q) };
+        return { prompt: "Order of operations", html: a + X + b + S + c + X + d, answer: p - q, why: p + " " + M + " " + q + " = " + sn(p - q) };
+      case 3: b = ri(r, 3, 9); p = ri(r, 3, 12); a = b * p; c = ri(r, 3, 12); d = ri(r, 3, 9); q = c * d; e = ri(r, 2, 20);
+        return { prompt: "Order of operations", html: a + D + b + P + c + X + d + S + e, answer: p + q - e,
+          why: a + " ÷ " + b + " = " + p + ", " + c + " × " + d + " = " + q + ", then " + p + " + " + q + " " + M + " " + e + " = " + sn(p + q - e) };
+      case 5: a = ri(r, 2, 15); b = ri(r, 4, 20); c = ri(r, 3, 9); e = ri(r, 2, 9); p = (a - b) * c; d = e * ri(r, 2, 9); q = d / e;
+        return { prompt: "Order of operations", html: "(" + a + S + b + ")" + X + c + S + d + D + e, answer: p - q,
+          why: "(" + a + " " + M + " " + b + ") × " + c + " = " + sn(a - b) + " × " + c + " = " + sn(p) + ", " + d + " ÷ " + e + " = " + q + ", then " + sn(p) + " " + M + " " + q + " = " + sn(p - q) };
+      case 6: a = ri(r, 6, 15); b = ri(r, 3, 12); c = ri(r, 3, 12); p = a * a; q = b * c;
+        return { prompt: "Order of operations", html: pw(a, 2) + S + b + X + c, answer: p - q, why: a + "² = " + p + ", " + b + " × " + c + " = " + q + ", then " + p + " " + M + " " + q + " = " + sn(p - q) };
+      default: a = ri(r, 3, 12); b = ri(r, 2, 9); c = ri(r, 4, 15); d = ri(r, 5, 40); p = a * (b - c);
+        return { prompt: "Order of operations", html: a + X + "(" + b + S + c + ")" + P + d, answer: p + d,
+          why: a + " × " + sp(b - c) + " = " + sn(p) + ", then " + sn(p) + " + " + d + " = " + sn(p + d) };
+    }
+  });
+
+  T(MENTAL, "near", [2, 3], "num", function (r, t) {
+    var a, m, d, form = t === 2 ? pick(r, ["x5", "x25", "x11", "x9"]) : pick(r, ["x99", "x101", "dsq", "x15", "x125"]);
+    switch (form) {
+      case "x5": do a = 2 * ri(r, 11, 99); while (a % 10 === 0);
+        return { prompt: "Multiply", html: a + o("×") + 5, answer: a * 5, why: "× 5 is ÷ 2 then × 10: " + a / 2 + " × 10 = " + a * 5 };
+      case "x25": do a = 4 * ri(r, 3, 49); while (a % 20 === 0);
+        return { prompt: "Multiply", html: a + o("×") + 25, answer: a * 25, why: "× 25 is ÷ 4 then × 100: " + a / 4 + " × 100 = " + a * 25 };
+      case "x11": do a = ri(r, 12, 98); while (a % 10 === 0);
+        var t1 = Math.floor(a / 10), u = a % 10;
+        return { prompt: "Multiply", html: a + o("×") + 11, answer: a * 11,
+          why: t1 + u < 10 ? "Put " + t1 + " + " + u + " = " + (t1 + u) + " between the digits: " + a * 11 : a + "0 + " + a + " = " + a * 11 };
+      case "x9": do a = ri(r, 13, 99); while (a % 10 === 0);
+        return { prompt: "Multiply", html: a + o("×") + 9, answer: a * 9, why: a + " × 10 " + M + " " + a + " = " + a * 10 + " " + M + " " + a + " = " + a * 9 };
+      case "x99": do a = ri(r, 13, 99); while (a % 10 === 0);
+        return { prompt: "Multiply", html: a + o("×") + 99, answer: a * 99, why: a + " × 100 " + M + " " + a + " = " + a * 100 + " " + M + " " + a + " = " + a * 99 };
+      case "x101": do a = ri(r, 13, 99); while (a % 10 === 0);
+        return { prompt: "Multiply", html: a + o("×") + 101, answer: a * 101, why: a + " × 100 + " + a + " = " + a * 101 };
+      case "dsq": m = 10 * ri(r, 2, 9); d = ri(r, 1, 9);
+        return { prompt: "Multiply", html: (m - d) + o("×") + (m + d), answer: m * m - d * d,
+          why: "(" + m + " " + M + " " + d + ")(" + m + " + " + d + ") = " + m + "² " + M + " " + d + "² = " + m * m + " " + M + " " + d * d + " = " + (m * m - d * d) };
+      case "x15": do a = 2 * ri(r, 7, 49); while (a % 10 === 0);
+        return { prompt: "Multiply", html: a + o("×") + 15, answer: a * 15, why: a + " × 10 + half of that = " + a * 10 + " + " + a * 5 + " = " + a * 15 };
+      default: do a = 8 * ri(r, 2, 12); while (a % 10 === 0);
+        return { prompt: "Multiply", html: a + o("×") + 125, answer: a * 125, why: "× 125 is ÷ 8 then × 1000: " + a / 8 + " × 1000 = " + a * 125 };
+    }
+  });
+
+  T(MENTAL, "pow", [2, 3], "num", function (r, t) {
+    var b, k, opts = t === 2 ? [[2, 5, 10], [3, 3, 5], [4, 3, 5], [5, 3, 4], [6, 3, 3]] : [[2, 11, 13], [3, 6, 7], [5, 5, 5], [6, 4, 4], [7, 3, 4], [9, 3, 4], [12, 3, 3], [11, 3, 3]];
+    var o2 = pick(r, opts);
+    b = o2[0]; k = ri(r, o2[1], o2[2]);
+    var x = Math.pow(b, k), prev = Math.pow(b, k - 1);
+    var why = b === 2 && k > 10 ? "2¹⁰ = 1024, then double " + (k === 11 ? "once" : k - 10 + " times") + ": " + x :
+      b + "<sup>" + (k - 1) + "</sup> = " + prev + ", × " + b + " = " + x;
+    return { prompt: "Power", html: pw(b, k), answer: x, why: why };
+  });
+
+  T(MENTAL, "series", [2, 3], "num", function (r, t) {
+    var n, D = o("+") + "⋯" + o("+");
+    if (t === 2) {
+      n = ri(r, 8, 20);
+      return { prompt: "Sum of odd numbers", html: "1" + o("+") + "3" + o("+") + "5" + D + (2 * n - 1), answer: n * n,
+        why: "There are " + n + " odd numbers, and the first n odd numbers add up to n²: " + n + "² = " + n * n };
+    }
+    n = ri(r, 21, 60);
+    if (r() < 0.3) {
+      return { prompt: "Sum of even numbers", html: "2" + o("+") + "4" + o("+") + "6" + D + 2 * n, answer: n * (n + 1),
+        why: "2 × (1 + ⋯ + " + n + ") = " + n + " × " + (n + 1) + " = " + n * (n + 1) };
+    }
+    return { prompt: "Sum", html: "1" + o("+") + "2" + o("+") + "3" + D + n, answer: n * (n + 1) / 2,
+      why: "n(n + 1)/2 = " + n + " × " + (n + 1) + " ÷ 2 = " + n * (n + 1) / 2 };
+  });
+
+  function digitSum(n) { return String(n).split("").reduce(function (s, c) { return s + +c; }, 0); }
+  T(MENTAL, "mod", [2, 3], "num", function (r, t) {
+    var m = t === 2 ? pick(r, [3, 4, 5, 9]) : pick(r, [7, 8, 11, 12]), N = ri(r, 1000, 9999), x = N % m, why, s, L;
+    if (m === 9 || m === 3) { s = digitSum(N); why = "Digit sum " + String(N).split("").join(" + ") + " = " + s + ", and " + s + " leaves " + x; }
+    else if (m === 4) { L = N % 100; why = "Only the last two digits matter: " + L + " ÷ 4 leaves " + x; }
+    else if (m === 5) { why = "Only the last digit matters: " + (N % 10) + " leaves " + x; }
+    else if (m === 8) { L = N % 1000; why = "Only the last three digits matter: " + L + " = 8 × " + Math.floor(L / 8) + " + " + x; }
+    else if (m === 11) {
+      var ds = String(N).split("").reverse(), alt = 0;
+      ds.forEach(function (c, i) { alt += i % 2 ? -c : +c; });
+      why = "Alternating digit sum from the right: " + ds.map(function (c, i) { return i ? (i % 2 ? " " + M + " " : " + ") + c : c; }).join("") + " = " + sn(alt) +
+        (alt < 0 || alt >= 11 ? ", which leaves " + x : "");
+    } else { var q = Math.floor(N / m); why = m + " × " + q + " = " + m * q + ", and " + N + " " + M + " " + m * q + " = " + x; }
+    return { prompt: "Remainder", html: N + o("÷") + m, label: w("remainder"), answer: x, why: why };
+  });
+
+  T(MENTAL, "neg", [1, 2], "arith", function (r, t) {
+    var a, b, c, p;
+    if (t === 1) {
+      a = ri(r, 5, 60); b = ri(r, 10, 70); c = ri(r, 3, 40);
+      return { prompt: "Negatives", html: M + a + o("+") + b + o(M) + c, answer: -a + b - c,
+        why: M + a + " + " + b + " = " + sn(b - a) + ", then " + M + " " + c + " = " + sn(b - a - c) };
+    }
+    a = ri(r, 3, 12); b = ri(r, 3, 9); c = ri(r, 10, 90); p = a * b;
+    if (r() < 0.5) {
+      return { prompt: "Negatives", html: "(" + M + a + ")" + o("×") + "(" + M + b + ")" + o(M) + c, answer: p - c,
+        why: "negative × negative is positive: " + p + ", then " + p + " " + M + " " + c + " = " + sn(p - c) };
+    }
+    return { prompt: "Negatives", html: c + o("+") + "(" + M + a + ")" + o("×") + b, answer: c - p,
+      why: "(" + M + a + ") × " + b + " = " + M + p + ", then " + c + " " + M + " " + p + " = " + sn(c - p) };
+  });
+
+  T(MENTAL, "mean", [2], "pct", function (r) {
+    var k = ri(r, 4, 5), m = ri(r, 12, 60), offs = [], s = 0, i;
+    for (i = 0; i < k - 1; i++) { offs.push(ri(r, -12, 12)); s += offs[i]; }
+    offs.push(-s);
+    if (Math.abs(offs[k - 1]) > 15 || m + Math.min.apply(null, offs) < 2) { offs = offs.map(function () { return 0; }); offs[0] = 7; offs[1] = -7; }
+    var vals = shuffle(offs.map(function (d) { return m + d; }), r), sum = m * k;
+    return { prompt: "Mean (average)", html: w("mean of") + " " + vals.join(", "), answer: m,
+      why: vals.join(" + ") + " = " + sum + ", and " + sum + " ÷ " + k + " = " + m };
+  });
+
+  T(MENTAL, "half", [1], "pct", function (r) {
+    var a;
+    if (r() < 0.5) {
+      do a = ri(r, 156, 489); while (a % 10 < 5 && Math.floor(a / 10) % 10 < 5);
+      var hi = a - a % 100;
+      return { prompt: "Double", html: w("double") + " " + a, answer: 2 * a, why: "2 × " + hi + " + 2 × " + (a - hi) + " = " + 2 * hi + " + " + 2 * (a - hi) + " = " + 2 * a };
+    }
+    do a = 2 * ri(r, 61, 499); while (Math.floor(a / 100) % 2 === 0 || a % 100 === 0);
+    var h = a - a % 100;
+    return { prompt: "Half", html: w("half of") + " " + a, answer: a / 2, why: "Half of " + h + " + half of " + (a - h) + " = " + h / 2 + " + " + (a - h) / 2 + " = " + a / 2 };
+  });
+
+  /* ------------------------- linear algebra: equations ------------------------- */
+  var X_ = v("x"), Y_ = v("y"), mi = " " + M + " ";
+  function divisors(P, lim) {                        // positive f <= lim with |P/f| <= lim
+    var out = [];
+    for (var f = 1; f <= lim; f++) if (P % f === 0 && Math.abs(P / f) <= lim) out.push(f);
+    return out;
+  }
+
+  T(LINEAR, "lin1", [1, 2], "eq", function (r, t) {
+    var x = nz(r, -6, 12), a, b, c, q;
+    if (t === 1) {
+      a = ri(r, 2, 9); b = nz(r, -20, 30); c = a * x + b;
+      return { prompt: "Solve for x", html: lin([[a, X_], [b]]) + EQ + sn(c), label: X_, answer: x,
+        why: a + X_ + " = " + sn(c) + (b < 0 ? " + " + -b : mi + b) + " = " + sn(c - b) + ", so " + X_ + " = " + sn(c - b) + " ÷ " + a + " = " + sn(x) };
+    }
+    if (r() < 0.5) {
+      a = ri(r, 2, 6); q = nz(r, -8, 12); x = a * q; b = nz(r, -15, 20); c = q + b;
+      return { prompt: "Solve for x", html: frac(X_, a) + o(b < 0 ? M : "+") + Math.abs(b) + EQ + sn(c), label: X_, answer: x,
+        why: X_ + "/" + a + " = " + sn(c) + (b < 0 ? " + " + -b : mi + b) + " = " + sn(q) + ", so " + X_ + " = " + a + " × " + sp(q) + " = " + sn(x) };
+    }
+    a = ri(r, 2, 7); b = nz(r, -9, 9); c = a * (x + b);
+    return { prompt: "Solve for x", html: a + "(" + lin([[1, X_], [b]]) + ")" + EQ + sn(c), label: X_, answer: x,
+      why: lin([[1, X_], [b]]) + " = " + sn(c) + " ÷ " + a + " = " + sn(x + b) + ", so " + X_ + " = " + sn(x) };
+  });
+
+  T(LINEAR, "lin2", [2, 3], "eq", function (r, t) {
+    var x = nz(r, -9, 12), a, b, c, d, e, k;
+    if (t === 2) {
+      do { a = nz(r, -4, 9); c = nz(r, -4, 9); } while (a === c || (a < 0 && c < 0));
+      b = nz(r, -20, 20); d = a * x + b - c * x;
+      return { prompt: "Solve for x", html: lin([[a, X_], [b]]) + EQ + lin([[c, X_], [d]]), label: X_, answer: x,
+        why: "Collect the " + X_ + " terms: " + lin([[a - c, X_]]) + " = " + sn(d) + (b < 0 ? " + " + -b : mi + b) + " = " + sn(d - b) +
+          ", so " + X_ + " = " + sn(d - b) + " ÷ " + sp(a - c) + " = " + sn(x) };
+    }
+    if (r() < 0.5) {
+      do { a = ri(r, 2, 6); c = ri(r, 2, 6); } while (a === c);
+      b = nz(r, -6, 6); d = nz(r, -6, 6); e = a * (x + b) - c * (x + d);
+      return { prompt: "Solve for x", html: a + "(" + lin([[1, X_], [b]]) + ")" + EQ + c + "(" + lin([[1, X_], [d]]) + ")" + (e ? o(e < 0 ? M : "+") + Math.abs(e) : ""),
+        label: X_, answer: x,
+        why: "Expand: " + lin([[a, X_], [a * b]]) + " = " + lin([[c, X_], [c * d + e]]) + ", so " + lin([[a - c, X_]]) + " = " + sn(c * d + e - a * b) + " and " + X_ + " = " + sn(x) };
+    }
+    do { b = ri(r, 2, 6); d = ri(r, 2, 6); } while (b === d);
+    k = nz(r, -5, 8); a = b * k - x; c = d * k - x;
+    return { prompt: "Solve for x", html: frac(lin([[1, X_], [a]]), b) + EQ + frac(lin([[1, X_], [c]]), d), label: X_, answer: x,
+      why: "Cross-multiply: " + d + "(" + lin([[1, X_], [a]]) + ") = " + b + "(" + lin([[1, X_], [c]]) + "), so " + lin([[d - b, X_]]) + " = " + sn(b * c - d * a) + " and " + X_ + " = " + sn(x) };
+  });
+
+  T(LINEAR, "sys", [1, 2, 3], "eq", function (r, t) {
+    var x, y, a, b, c, d, p, q, D, askX = r() < 0.5;
+    if (t === 1) {
+      do { x = ri(r, 1, 15); y = ri(r, 1, 15); } while (x === y);
+      p = x + y; q = x - y;
+      return { prompt: "Simultaneous equations", html: sys([lin([[1, X_], [1, Y_]]) + EQ + p, lin([[1, X_], [-1, Y_]]) + EQ + sn(q)]),
+        label: askX ? X_ : Y_, answer: askX ? x : y,
+        why: askX ? "Add them: 2" + X_ + " = " + p + " + " + sp(q) + " = " + (p + q) + ", so " + X_ + " = " + x :
+          "Subtract them: 2" + Y_ + " = " + p + mi + sp(q) + " = " + (p - q) + ", so " + Y_ + " = " + y };
+    }
+    var R = t === 2 ? 5 : 9;
+    do { a = ri(r, 1, R); b = nz(r, -R, R); c = nz(r, -R, R); d = nz(r, -R, R); D = a * d - b * c; }
+    while (!D || (t === 2 && Math.abs(D) > 20));
+    x = t === 2 ? nz(r, -5, 9) : nz(r, -9, 12); y = t === 2 ? nz(r, -5, 9) : nz(r, -9, 12);
+    p = a * x + b * y; q = c * x + d * y;
+    var top = askX ? sp(p) + "·" + sp(d) + mi + sp(b) + "·" + sp(q) : sp(a) + "·" + sp(q) + mi + sp(p) + "·" + sp(c);
+    return { prompt: "Simultaneous equations", html: sys([lin([[a, X_], [b, Y_]]) + EQ + sn(p), lin([[c, X_], [d, Y_]]) + EQ + sn(q)]),
+      label: askX ? X_ : Y_, answer: askX ? x : y,
+      why: "Cramer's rule: det = " + sp(a) + "·" + sp(d) + mi + sp(b) + "·" + sp(c) + " = " + sn(D) + ", " + (askX ? X_ : Y_) + " = (" + top + ") ÷ " + sp(D) +
+        " = " + sn((askX ? x : y) * D) + " ÷ " + sp(D) + " = " + sn(askX ? x : y) };
+  });
+
+  T(LINEAR, "line", [1, 2], "eq", function (r, t) {
+    var m = nz(r, -5, 6), b0 = ri(r, -9, 9), x1, x2, x3, F = v("f");
+    function f(x) { return m * x + b0; }
+    if (t === 1) {
+      x1 = ri(r, -4, 5); x2 = x1 + ri(r, 1, 6);
+      if (r() < 0.5) { x3 = x1; x1 = x2; x2 = x3; }
+      return { prompt: "Slope of the line through", html: "(" + sn(x1) + ", " + sn(f(x1)) + ")" + w("and") + "(" + sn(x2) + ", " + sn(f(x2)) + ")",
+        label: v("m"), answer: m,
+        why: "(" + sn(f(x2)) + mi + sp(f(x1)) + ") ÷ (" + sn(x2) + mi + sp(x1) + ") = " + sn(f(x2) - f(x1)) + " ÷ " + sp(x2 - x1) + " = " + sn(m) };
+    }
+    x1 = ri(r, -3, 4); x2 = x1 + ri(r, 2, 5); x3 = x2 + ri(r, 2, 8);
+    return { prompt: F + " is a linear function", html: stack([F + "(" + sn(x1) + ")" + EQ + sn(f(x1)), F + "(" + sn(x2) + ")" + EQ + sn(f(x2))]),
+      label: F + "(" + sn(x3) + ")", answer: f(x3),
+      why: "Slope = (" + sn(f(x2)) + mi + sp(f(x1)) + ") ÷ " + (x2 - x1) + " = " + sn(m) + ", so " + F + "(" + sn(x3) + ") = " + sn(f(x2)) + " + " + sp(m) + " × " + (x3 - x2) + " = " + sn(f(x3)) };
+  });
+
+  T(LINEAR, "sing", [2, 3], "eq", function (r, t) {
+    var K = v("k"), k, divs, f, g;
+    if (t === 2) {
+      for (;;) {
+        k = nz(r, -9, 12);
+        var pos = ri(r, 0, 3), partner = nz(r, -6, 8), P = k * partner;
+        divs = divisors(P, 12);
+        if (!divs.length) continue;
+        f = pick(r, divs) * sgn(r); g = P / f;
+        // cells a b / c d: k's diagonal partner is 'partner', and the other diagonal multiplies to P
+        var cells = [0, 0, 0, 0], other = [[3, 1, 2], [2, 0, 3], [1, 0, 3], [0, 1, 2]][pos], main = pos === 0 || pos === 3;
+        cells[pos] = K; cells[other[0]] = partner; cells[other[1]] = f; cells[other[2]] = g;
+        return { prompt: "This matrix is singular. Find " + K, html: mat([[cells[0], cells[1]], [cells[2], cells[3]]]), label: K, answer: k,
+          why: "det = " + (main ? K + "·" + sp(partner) + mi + sp(f) + "·" + sp(g) : sp(f) + "·" + sp(g) + mi + K + "·" + sp(partner)) +
+            " = 0, so " + K + " = " + sn(P) + " ÷ " + sp(partner) + " = " + sn(k) };
       }
-      events.push(extend({ t: t }, d));
+    }
+    for (;;) {
+      var r1 = ri(r, 1, 8), r2 = -ri(r, 1, 8), p = ri(r, -5, 5), q = -(r1 + r2) - p;
+      if (Math.abs(q) > 9) continue;
+      var bc = p * q - r1 * r2;
+      if (!bc) continue;
+      divs = divisors(bc, 12);
+      if (!divs.length) continue;
+      f = pick(r, divs) * sgn(r); g = bc / f;
+      return { prompt: "This matrix is singular. Find the positive " + K, html: mat([[lin([[1, K], [p]]), f], [g, lin([[1, K], [q]])]]), label: K, answer: r1,
+        why: "det = (" + lin([[1, K], [p]]) + ")(" + lin([[1, K], [q]]) + ")" + mi + sp(f) + "·" + sp(g) + " = " + lin([[1, pw(K, 2)], [-(r1 + r2), K], [r1 * r2]]) +
+          " = (" + lin([[1, K], [-r1]]) + ")(" + lin([[1, K], [-r2]]) + "), so " + K + " = " + r1 + " (or " + sn(r2) + ")" };
+    }
+  });
+
+  // The 21X hand: choose X (a whole number, never 0) so the cards total exactly 21. N = cards in the hand.
+  function qneg(q) { return X21.qsub(X21.Q(0), q); }
+  function qsum(vals) {
+    return vals.map(function (q, i) { return i === 0 ? X21.qhtml(q) : q.n < 0n ? mi + X21.qhtml(qneg(q)) : " + " + X21.qhtml(q); }).join("");
+  }
+  function linQ(lf, X) {
+    var a = lf.a, b = lf.b;
+    var s = X21.qeq(a, X21.Q(1)) ? X : X21.qeq(a, X21.Q(-1)) ? M + X : X21.qhtml(a) + X;
+    if (b.n !== 0n) s += b.n < 0n ? mi + X21.qhtml(qneg(b)) : " + " + X21.qhtml(b);
+    return s;
+  }
+  T(LINEAR, "x21", [2, 3], "eq", function (r, t, ctx) {
+    var X = v("X"), n = t === 2 ? 2 : 3, pool = ctx.cards.filter(function (c) { return c.level <= t; }), hand = null, sols;
+    for (var tries = 0; tries < 500 && !hand; tries++) {
+      var h = shuffle(pool.slice(), r).slice(0, n);
+      if (!h.some(function (c) { return c.vars.X; }) || (t === 3 && !h.some(function (c) { return c.level >= 2; }))) continue;
+      sols = X21.solveX(h, 30);
+      if (sols.length && sols.length <= 2 && Math.abs(sols[0]) <= (t === 2 ? 8 : 10)) hand = h;
+    }
+    if (!hand) {                                     // the rulebook's example hand
+      hand = ["6X", "2X+4", "X/2"].map(function (f) { return ctx.cards.filter(function (c) { return c.formula === f; })[0]; });
+      sols = X21.solveX(hand, 30);
+    }
+    var x = sols[0], ev = X21.evalHand(hand, x), lf = X21.linearForm(hand);
+    return {
+      prompt: "21X: choose " + X + " so the cards total 21", cards: hand,
+      html: '<div class="hand">' + hand.map(function (c) { return X21.cardHtml(c); }).join("") + '</div><div class="nline">' + v("N") + " = " + hand.length + " cards</div>",
+      label: X, answer: x, check: function (val) { return X21.makes21(hand, val); },
+      why: (lf && lf.a.n !== 0n ? "Total = " + linQ(lf, X) + " = 21, so " + X + " = " + sn(x) + ". " : "") +
+        "At " + X + " = " + sn(x) + ": " + qsum(ev.values) + " = 21" + (sols.length > 1 ? " (" + X + " = " + sn(sols[1]) + " works too)" : "")
+    };
+  });
+
+  /* ------------------------- linear algebra: vectors & matrices ------------------------- */
+  function mpow(m, e) { return '<span class="msup">' + m + "<sup>" + e + "</sup></span>"; }
+
+  T(LINEAR, "dot", [1, 2], "mat", function (r, t) {
+    var n = t === 1 ? 2 : 3, lo = t === 1 ? -5 : -6, u = [], vv = [];
+    for (var i = 0; i < n; i++) { u.push(nz(r, lo, 9)); vv.push(nz(r, lo, 9)); }
+    var pairs = u.map(function (x, k) { return [x, vv[k]]; });
+    return { prompt: "Dot product", html: col(u) + o("·") + col(vv), answer: pairs.reduce(function (s, p) { return s + p[0] * p[1]; }, 0), why: dotWhy(pairs) };
+  });
+
+  T(LINEAR, "comb", [1], "mat", function (r) {
+    var n = ri(r, 2, 3), u = [], vv = [], al = pick(r, [2, 3, 4, -1, -2]), be = pick(r, [1, 2, 3, -1, -2, -3]), i = ri(r, 0, n - 1);
+    for (var k = 0; k < n; k++) { u.push(ri(r, -5, 8)); vv.push(ri(r, -5, 8)); }
+    var U = v("u"), V = v("v"), val = al * u[i] + be * vv[i];
+    return { prompt: "Linear combination: " + ORD[i + 1] + " entry", html: U + EQ + col(u) + '<span class="gap"></span>' + V + EQ + col(vv),
+      label: "(" + lin([[al, U], [be, V]]) + ")" + sub(i + 1), answer: val,
+      why: sp(al) + "·" + sp(u[i]) + " + " + sp(be) + "·" + sp(vv[i]) + " = " + sumText([al * u[i], be * vv[i]]) + " = " + sn(val) };
+  });
+
+  T(LINEAR, "det2", [1, 2], "mat", function (r, t) {
+    var a, b, c, d;
+    if (t === 1) { a = ri(r, 1, 9); b = ri(r, 1, 9); c = ri(r, 1, 9); d = ri(r, 1, 9); }
+    else do { a = nz(r, -9, 12); b = nz(r, -9, 12); c = nz(r, -9, 12); d = nz(r, -9, 12); } while (a > 0 && b > 0 && c > 0 && d > 0);
+    var D = a * d - b * c;
+    return { prompt: "Determinant", html: mat([[a, b], [c, d]], true), answer: D,
+      why: v("ad") + mi + v("bc") + " = " + sp(a) + "·" + sp(d) + mi + sp(b) + "·" + sp(c) + " = " + sn(a * d) + mi + sp(b * c) + " = " + sn(D) };
+  });
+
+  function det2v(m) { return m[0][0] * m[1][1] - m[0][1] * m[1][0]; }
+  function minor(m, i, j) {
+    return m.filter(function (_, p) { return p !== i; }).map(function (row) { return row.filter(function (_, q) { return q !== j; }); });
+  }
+  function det3v(m) { return m[0][0] * det2v(minor(m, 0, 0)) - m[0][1] * det2v(minor(m, 0, 1)) + m[0][2] * det2v(minor(m, 0, 2)); }
+  T(LINEAR, "det3", [3], "mat", function (r) {
+    var m, D;
+    do {
+      m = [0, 1, 2].map(function () { return [0, 1, 2].map(function () { return ri(r, -3, 5); }); });
+      shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8], r).slice(0, ri(r, 2, 4)).forEach(function (k) { m[Math.floor(k / 3)][k % 3] = 0; });
+      D = det3v(m);
+    } while (Math.abs(D) > 99 || (D === 0 && r() < 0.85));
+    var best = null;                                 // expand along the line with the most zeros
+    for (var k = 0; k < 6; k++) {
+      var line = [0, 1, 2].map(function (j) { return k < 3 ? [k, j] : [j, k - 3]; });
+      var z = line.filter(function (p) { return m[p[0]][p[1]] === 0; }).length;
+      if (!best || z > best.z) best = { z: z, line: line, name: k < 3 ? "row " + (k + 1) : "column " + (k - 2), signs: k % 2 ? "− + −" : "+ − +" };
+    }
+    var terms = best.line.filter(function (p) { return m[p[0]][p[1]] !== 0; }).map(function (p) {
+      return { c: ((p[0] + p[1]) % 2 ? -1 : 1) * m[p[0]][p[1]], minor: det2v(minor(m, p[0], p[1])) };
+    });
+    var why = !terms.length ? "A whole " + best.name + " is zero, so the determinant is 0" :
+      "Expand along " + best.name + " (signs " + best.signs + "), each entry times its 2×2 minor: " + terms.map(function (tm, i) {
+        return (i === 0 ? sn(tm.c) : tm.c < 0 ? mi + -tm.c : " + " + tm.c) + "·" + sp(tm.minor);
+      }).join("") + " = " + sn(D);
+    return { prompt: "Determinant", html: mat(m, true), answer: D, why: why };
+  });
+
+  T(LINEAR, "matvec", [1, 2], "mat", function (r, t) {
+    var n = t === 1 ? 2 : 3, A = [], x = [], i = ri(r, 0, n - 1);
+    for (var p = 0; p < n; p++) {
+      A.push([]);
+      for (var q = 0; q < n; q++) A[p].push(t === 1 ? ri(r, -3, 7) : ri(r, -2, 5));
+      x.push(t === 1 ? nz(r, -4, 6) : nz(r, -3, 5));
+    }
+    var pairs = A[i].map(function (a, q) { return [a, x[q]]; });
+    return { prompt: "Matrix × vector: " + ORD[i + 1] + " entry", html: mat(A) + col(x), label: w("entry " + (i + 1)),
+      answer: pairs.reduce(function (s, pr) { return s + pr[0] * pr[1]; }, 0), why: "Row " + (i + 1) + " · the vector = " + dotWhy(pairs) };
+  });
+
+  T(LINEAR, "matmul", [2, 3], "mat", function (r, t) {
+    var n = t === 2 ? 2 : 3, lo = t === 2 ? -3 : -2, hi = t === 2 ? 6 : 4, A = [], B = [], i = ri(r, 0, n - 1), j = ri(r, 0, n - 1);
+    for (var p = 0; p < n; p++) {
+      A.push([]); B.push([]);
+      for (var q = 0; q < n; q++) { A[p].push(ri(r, lo, hi)); B[p].push(ri(r, lo, hi)); }
+    }
+    var pairs = A[i].map(function (a, k) { return [a, B[k][j]]; });
+    return { prompt: "Matrix product: row " + (i + 1) + ", column " + (j + 1), html: mat(A) + mat(B), label: w("entry (" + (i + 1) + ", " + (j + 1) + ")"),
+      answer: pairs.reduce(function (s, pr) { return s + pr[0] * pr[1]; }, 0),
+      why: "Row " + (i + 1) + " of the left · column " + (j + 1) + " of the right = " + dotWhy(pairs) };
+  });
+
+  T(LINEAR, "trace", [2], "mat", function (r) {
+    var a = ri(r, -4, 6), b = nz(r, -4, 6), c = nz(r, -4, 6), d = ri(r, -4, 6), A = v("A"), B = v("B"), tr = fn("tr");
+    if (r() < 0.5) {
+      var s = a * a + 2 * b * c + d * d;
+      return { prompt: "Trace", html: A + EQ + mat([[a, b], [c, d]]), label: tr + "(" + pw(A, 2) + ")", answer: s,
+        why: tr + "(" + pw(A, 2) + ") = " + pw(v("a"), 2) + " + 2" + v("bc") + " + " + pw(v("d"), 2) + " = " + sumText([a * a, 2 * b * c, d * d]) + " = " + sn(s) };
+    }
+    var e = ri(r, -3, 6), f = ri(r, -3, 6), g = ri(r, -3, 6), h = ri(r, -3, 6), s2 = a * e + b * g + c * f + d * h;
+    return { prompt: "Trace", html: A + EQ + mat([[a, b], [c, d]]) + '<span class="gap"></span>' + B + EQ + mat([[e, f], [g, h]]),
+      label: tr + "(" + A + B + ")", answer: s2,
+      why: "(" + A + B + ")" + sub(11) + " + (" + A + B + ")" + sub(22) + " = " + prodSum([[a, e], [b, g]]) + " + " + prodSum([[c, f], [d, h]]) + " = " + sn(s2) };
+  });
+
+  T(LINEAR, "eig", [3], "mat", function (r) {
+    var l1, l2, a, b, c, d, bc, big = r() < 0.6, divs;
+    for (;;) {
+      l1 = ri(r, -5, 9); l2 = ri(r, -5, 9);
+      if (l1 === l2) continue;
+      if (l1 < l2) { a = l1; l1 = l2; l2 = a; }
+      a = ri(r, -4, 9); d = l1 + l2 - a;
+      if (Math.abs(d) > 9) continue;
+      bc = a * d - l1 * l2;
+      if (bc === 0) {
+        if (r() < 0.85) continue;
+        b = nz(r, -6, 6); c = 0;
+        if (r() < 0.5) { c = b; b = 0; }
+        break;
+      }
+      divs = divisors(bc, 9);
+      if (!divs.length) continue;
+      b = pick(r, divs) * sgn(r); c = bc / b;
       break;
     }
-    return events;
+    var tr = l1 + l2, det = l1 * l2, L = v("λ");
+    return { prompt: (big ? "Larger" : "Smaller") + " eigenvalue", html: mat([[a, b], [c, d]]), label: L, answer: big ? l1 : l2,
+      why: "Trace " + sn(tr) + ", det " + sn(det) + ": " + lin([[1, pw(L, 2)], [-tr, L], [det]]) + " = (" + lin([[1, L], [-l1]]) + ")(" + lin([[1, L], [-l2]]) +
+        ") = 0, so " + L + " = " + sn(l1) + " or " + sn(l2) };
+  });
+
+  T(LINEAR, "inv", [3], "mat", function (r) {
+    var a, b, c, d, det, divs;
+    for (;;) {
+      det = r() < 0.75 ? 1 : -1; a = nz(r, -5, 7); d = nz(r, -5, 7);
+      var bc = a * d - det;
+      if (!bc) continue;
+      divs = divisors(bc, 9);
+      if (!divs.length) continue;
+      b = pick(r, divs) * sgn(r); c = bc / b;
+      break;
+    }
+    var inv = [[d * det, -b * det], [-c * det, a * det]], i = ri(r, 0, 1), j = ri(r, 0, 1);
+    return { prompt: "Inverse: row " + (i + 1) + ", column " + (j + 1), html: mpow(mat([[a, b], [c, d]]), M + "1"), label: w("entry (" + (i + 1) + ", " + (j + 1) + ")"),
+      answer: inv[i][j],
+      why: "det = " + sp(a) + "·" + sp(d) + mi + sp(b) + "·" + sp(c) + " = " + sn(det) + ". Swap the diagonal, negate the other two" +
+        (det < 0 ? ", then divide by " + M + "1" : "") + ": " + mat(inv) };
+  });
+
+  var TRIPLES = [[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25], [6, 8, 10], [9, 12, 15], [20, 21, 29], [12, 16, 20]];
+  var QUADS = [[1, 2, 2, 3], [2, 3, 6, 7], [1, 4, 8, 9], [4, 4, 7, 9], [2, 6, 9, 11], [6, 6, 7, 11], [3, 4, 12, 13],
+    [2, 5, 14, 15], [2, 10, 11, 15], [1, 12, 12, 17], [8, 9, 12, 17], [6, 10, 15, 19], [2, 4, 4, 6], [4, 8, 8, 12]];
+  T(LINEAR, "norm", [2, 3], "mat", function (r, t) {
+    var row = pick(r, t === 2 ? TRIPLES : QUADS), n = row.length - 1, len = row[n];
+    var comps = shuffle(row.slice(0, n), r).map(function (x) { return x * sgn(r); });
+    return { prompt: "Length of the vector", html: '<span class="nrm">' + col(comps) + "</span>", answer: len,
+      why: "√(" + comps.map(function (x) { return x * x; }).join(" + ") + ") = √" + len * len + " = " + len };
+  });
+
+  T(LINEAR, "cross", [3], "mat", function (r) {
+    var u = [], vv = [], k = ri(r, 0, 2), U = v("u"), V = v("v");
+    for (var i = 0; i < 3; i++) { u.push(ri(r, -3, 5)); vv.push(ri(r, -3, 5)); }
+    var I = (k + 1) % 3, J = (k + 2) % 3, val = u[I] * vv[J] - u[J] * vv[I];
+    return { prompt: "Cross product: " + ORD[k + 1] + " entry", html: col(u) + o("×") + col(vv), label: w("entry " + (k + 1)), answer: val,
+      why: U + sub(I + 1) + V + sub(J + 1) + mi + U + sub(J + 1) + V + sub(I + 1) + " = " + sp(u[I]) + "·" + sp(vv[J]) + mi + sp(u[J]) + "·" + sp(vv[I]) + " = " + sn(val) };
+  });
+
+  T(LINEAR, "detprop", [2, 3], "mat", function (r, t) {
+    var n = ri(r, 2, 3), dA = nz(r, -5, 6), dB = nz(r, -4, 5), k = pick(r, [2, 3, -1, -2]), kn = Math.pow(k, n);
+    var A = v("A"), B = v("B"), det = fn("det"), K = k === -1 ? M : sn(k), Kn = sp(k) + "<sup>" + n + "</sup>";
+    var form = t === 2 ? pick(r, ["kA", "AB", "AtB", "A2"]) : pick(r, ["kAB", "kAinvB", "A2B", "kAt"]);
+    var useB = /B/.test(form), lab, ans, why, notes = [];
+    if (form === "kAinvB") {
+      var ds = [];
+      for (var f = 1; f <= 6; f++) if ((kn * dB) % f === 0) ds.push(f);
+      dA = pick(r, ds) * sgn(r);
+    }
+    switch (form) {
+      case "kA": lab = K + A; ans = kn * dA; why = Kn + " · " + sp(dA); break;
+      case "AB": lab = A + B; ans = dA * dB; why = sp(dA) + " · " + sp(dB); break;
+      case "AtB": lab = pw(A, "T") + B; ans = dA * dB; why = sp(dA) + " · " + sp(dB); break;
+      case "A2": lab = pw(A, 2); ans = dA * dA; why = sp(dA) + "²"; break;
+      case "kAB": lab = K + A + B; ans = kn * dA * dB; why = Kn + " · " + sp(dA) + " · " + sp(dB); break;
+      case "kAinvB": lab = K + pw(A, M + "1") + B; ans = kn * dB / dA; why = Kn + " · " + sp(dB) + " ÷ " + sp(dA); break;
+      case "A2B": lab = pw(A, 2) + B; ans = dA * dA * dB; why = sp(dA) + "² · " + sp(dB); break;
+      default: lab = K + pw(A, "T"); ans = kn * dA; why = Kn + " · " + sp(dA);
+    }
+    if (/^k/.test(form)) notes.push("Scaling an " + n + " × " + n + " matrix by " + sn(k) + " scales its determinant by " + Kn + ".");
+    if (/t/.test(form)) notes.push("Transposing doesn't change a determinant.");
+    if (/inv/.test(form)) notes.push(fn("det") + " " + pw(A, M + "1") + " = 1 ÷ " + fn("det") + " " + A + ".");
+    return {
+      prompt: "Determinant rules", label: det + "(" + lab + ")", answer: ans,
+      html: stack([(useB ? A + ", " + B + " " + w("are") : A + " " + w("is")) + " " + n + " × " + n,
+        det + " " + A + EQ + sn(dA) + (useB ? '<span class="gap"></span>' + det + " " + B + EQ + sn(dB) : "")]),
+      why: det + "(" + lab + ") = " + why + " = " + sn(ans) + (notes.length ? ". " + notes.join(" ") : "")
+    };
+  });
+
+  /* ============================ rounds ============================ */
+  var CATS = {
+    mental: { name: "Mental maths", list: MENTAL, required: [] },
+    linear: { name: "Linear algebra", list: LINEAR, required: ["x21"] }      // every linear round has one 21X hand
+  };
+  // the tier each of the 10 questions is drawn from: a warm-up, then harder
+  var RAMPS = {
+    gentle:   [1, 1, 1, 1, 1, 1, 2, 2, 2, 2],
+    standard: [1, 1, 1, 2, 2, 2, 2, 3, 3, 3],
+    spicy:    [1, 2, 2, 2, 3, 3, 3, 3, 3, 3]
+  };
+  // ctx: {cards} (the 21X deck; without it the 21X hand question is left out)
+  function makeRound(cat, diff, seed, ctx) {
+    ctx = ctx || {};
+    var r = mulberry32(seed), C = CATS[cat], ramp = RAMPS[diff] || RAMPS.standard;
+    var pool = C.list.filter(function (t) { return t.type !== "x21" || (ctx.cards && ctx.cards.length); });
+    var slots = ramp.map(function (tier) { return { tier: tier, tpl: null }; }), used = {}, fams = {};
+    function take(s, tpl) { s.tpl = tpl; used[tpl.type] = true; fams[tpl.fam] = (fams[tpl.fam] || 0) + 1; }
+    C.required.forEach(function (type) {
+      var tpl = pool.filter(function (t) { return t.type === type; })[0];
+      if (!tpl) return;
+      var open = slots.filter(function (s) { return tpl.tiers.indexOf(s.tier) >= 0; });
+      if (open.length) take(pick(r, open), tpl);
+    });
+    slots.forEach(function (s) {
+      if (s.tpl) return;
+      var fit = pool.filter(function (t) { return t.tiers.indexOf(s.tier) >= 0; });
+      var fresh = fit.filter(function (t) { return !used[t.type]; });
+      if (fresh.length) fit = fresh;
+      var least = Math.min.apply(null, fit.map(function (t) { return fams[t.fam] || 0; }));   // keep the topics mixed
+      take(s, pick(r, fit.filter(function (t) { return (fams[t.fam] || 0) === least; })));
+    });
+    return slots.map(function (s, k) {
+      var q = s.tpl.gen(r, s.tier, ctx);
+      q.type = s.tpl.type; q.fam = s.tpl.fam; q.tier = s.tier; q.n = k + 1;
+      if (q.label === undefined) q.label = "";
+      return q;
+    });
   }
-  function extend(a, b) { if (b) for (var k in b) a[k] = b[k]; return a; }
+  function isRight(q, val) { return typeof val === "number" && (q.check ? q.check(val) : val === q.answer); }
+
+  /* ============================ days & streaks ============================ */
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function dayKey(d) { d = d || new Date(); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+  function keyDate(k) { var p = k.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function addDays(k, n) { var d = keyDate(k); d.setDate(d.getDate() + n); return dayKey(d); }
+  // everyone gets the same 10 questions for a given day, category and difficulty
+  function dailySeed(k, cat, diff) { return hashStr(GEN + "|" + k + "|" + cat + "|" + diff); }
+  // days: {"2026-10-27": {mental: record, linear: record}}; a day counts once any daily round is done
+  function played(day) { return !!day && Object.keys(day).length > 0; }
+  function streak(days, today) {
+    var k = played(days[today]) ? today : addDays(today, -1), n = 0;
+    while (played(days[k])) { n++; k = addDays(k, -1); }
+    return n;
+  }
+  function bestStreak(days) {
+    var best = 0, run = 0, prev = null;
+    Object.keys(days).filter(function (k) { return played(days[k]); }).sort().forEach(function (k) {
+      run = prev && addDays(prev, 1) === k ? run + 1 : 1;
+      best = Math.max(best, run); prev = k;
+    });
+    return best;
+  }
 
   var api = {
-    MAX_HAND: MAX_HAND, TARGET: TARGET, STAND_MS: STAND_MS, BOTS: BOTS, SETS: SETS, MINUS: MINUS,
-    Q: Q, qadd: qadd, qsub: qsub, qmul: qmul, qdiv: qdiv, qpow: qpow, qcmp: qcmp, qnum: qnum,
-    qstr: qstr, qhtml: qhtml, qapprox: qapprox, esc: esc,
-    seqTerm: seqTerm, seqPreview: seqPreview, SEQ_INFO: SEQ_INFO, piDigits: piDigits, eDigits: eDigits,
-    parse: parse, evalQ: evalQ, compileF: compileF, render: render, textOf: textOf,
-    classify: classify, isValid: isValid, evalHand: evalHand, handVars: handVars, handIcons: handIcons,
-    analyze: analyze, parseCSV: parseCSV, loadCards: loadCards, deckIds: deckIds,
-    cardHtml: cardHtml, celebBody: celebBody, shapesHtml: shapesHtml,
-    mulberry32: mulberry32, shuffle: shuffle, Deck: Deck, Solo: Solo,
-    botCfg: botCfg, botThinkMs: botThinkMs, botDecide: botDecide, botTimeline: botTimeline
+    ROUND: ROUND, GEN: GEN, CATS: CATS, RAMPS: RAMPS, MENTAL: MENTAL, LINEAR: LINEAR,
+    mulberry32: mulberry32, hashStr: hashStr, shuffle: shuffle, det3v: det3v,
+    makeRound: makeRound, isRight: isRight,
+    dayKey: dayKey, keyDate: keyDate, addDays: addDays, dailySeed: dailySeed, played: played, streak: streak, bestStreak: bestStreak
   };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
-  global.X21 = api;
+  global.TOT = api;
 })(typeof window !== "undefined" ? window : this);
 </script>
-<script>/* 21X trainer - DOM UI, screens & game controllers (browser only) */
+<script>/* Train of Thought - DOM UI: screens, keypad, rounds (browser only) */
 (function () {
   "use strict";
-  var G = window.X21, esc = G.esc, M = G.MINUS, qh = G.qhtml;
+  var X21 = window.X21, T = window.TOT, esc = X21.esc, M = X21.MINUS;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var app = $("#app"), fxLayer = $("#fx");
-  var LS = "21x:";
+  var LS = "tot:", CATS = ["mental", "linear"];
 
   /* ============================ data & settings ============================ */
   var CARDS = [], LOAD_ERR = "";
-  try { CARDS = G.loadCards($("#cards-csv").textContent); } catch (e) { LOAD_ERR = e.message; }
+  try { CARDS = X21.loadCards($("#cards-csv").textContent); } catch (e) { LOAD_ERR = e.message; }
+  var CTX = { cards: CARDS };
 
   function load(k, d) { try { var v = localStorage.getItem(LS + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch (e) {} }
-  var DEFAULTS = { levels: [1, 2, 3], celebrity: false, limited: false, penalty: 10, bot: "medium", live: false, missed: true };
-  var S = Object.assign({}, DEFAULTS, load("settings", {}));
-  if (!Array.isArray(S.levels) || !S.levels.length) S.levels = [1, 2, 3];
+  function drop(k) { try { localStorage.removeItem(LS + k); } catch (e) {} }
+  var S = Object.assign({ diff: "standard", haptics: true }, load("settings", {}));
+  if (!T.RAMPS[S.diff]) S.diff = "standard";
   function saveSettings() { save("settings", S); }
-  function deckList() { return G.deckIds(CARDS, { levels: S.levels, celebrity: S.celebrity, limited: S.limited }); }
-  function deckLabel() {
-    var lv = S.levels.slice().sort();
-    return (lv.length === 3 ? "Core" : "Level " + lv.join("+")) + (S.celebrity ? " + Celebrity" : "") + (S.limited ? " + V&Y" : "");
-  }
-  // best solo times are kept per deck + penalty setting, so runs stay comparable
-  function soloKey() { return "L" + S.levels.slice().sort().join("") + (S.celebrity ? "C" : "") + (S.limited ? "V" : "") + "-p" + S.penalty; }
-  var BEST = load("best", {});
+  var DAYS = load("days", {});                     // {"2026-10-27": {mental: record, linear: record}}
+  function saveDays() { save("days", DAYS); }
+
+  var CAT_INFO = {
+    mental: { name: "Mental maths", blurb: "Arithmetic, percentages, squares and shortcuts" },
+    linear: { name: "Linear algebra", blurb: "Equations, vectors, matrices and one 21X hand" }
+  };
+  var DIFF_INFO = {
+    gentle: { name: "Gentle", note: "Six warm-ups, then four medium questions." },
+    standard: { name: "Standard", note: "Three warm-ups, four medium, then three hard questions." },
+    spicy: { name: "Spicy", note: "One warm-up, three medium, then six hard questions." }
+  };
 
   function seed() { try { return crypto.getRandomValues(new Uint32Array(1))[0]; } catch (e) { return (Math.random() * 4294967296) >>> 0; } }
   function fmtTime(ms) {
     var t = Math.floor(Math.max(0, ms) / 100), m = Math.floor(t / 600), s = Math.floor(t / 10) % 60;
     return m + ":" + (s < 10 ? "0" : "") + s + "." + (t % 10);
   }
-  function vibrate(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
-  function card(id) { return CARDS[id]; }
-  var DECK_ICON = '<svg viewBox="0 0 10 14" width="10" height="14" aria-hidden="true"><rect x=".5" y=".5" width="9" height="13" rx="1.6" fill="#163a2d" stroke="#d5a637"/></svg>';
+  function fmtSec(ms) { return (Math.max(0, ms) / 1000).toFixed(1) + " s"; }
+  function sn(n) { return n < 0 ? M + -n : String(n); }
+  function vibrate(p) { if (S.haptics) try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function today() { return T.dayKey(); }
+  function niceDate(key, long) {
+    return T.keyDate(key).toLocaleDateString(undefined, long ? { weekday: "long", day: "numeric", month: "long" } : { weekday: "short", day: "numeric", month: "short" });
+  }
+  function scoreOf(answers) { return answers.filter(function (a) { return a.ok; }).length; }
+  function timeOf(answers) { return answers.reduce(function (s, a) { return s + a.ms; }, 0); }
 
   /* ============================ toasts & overlays ============================ */
   function toast(html) {
@@ -1029,759 +1433,420 @@ LE3-09,limited,3,X^V,,fan
     fxLayer.appendChild(el);
     setTimeout(function () { el.remove(); }, 2700);
   }
-  function banner(html) {
-    Array.prototype.forEach.call(fxLayer.querySelectorAll(".banner"), function (el) { el.remove(); });
-    var el = document.createElement("div");
-    el.className = "banner"; el.innerHTML = html;
-    fxLayer.appendChild(el);
-    setTimeout(function () { el.remove(); }, 2200);
-  }
-  function overlay(html, cls, dismissable) {
+  function overlay(html, dismissable) {
     closeOverlay();
     var el = document.createElement("div");
     el.className = "ov";
-    el.innerHTML = '<div class="sheet ' + (cls || "") + '">' + html + "</div>";
-    if (dismissable) el.addEventListener("click", function (e) { if (e.target === el || e.target.closest(".card")) closeOverlay(); });
+    el.innerHTML = '<div class="sheet">' + html + "</div>";
+    if (dismissable) el.addEventListener("click", function (e) { if (e.target === el) closeOverlay(); });
     document.body.appendChild(el);
   }
   function closeOverlay() { var el = $(".ov"); if (el) el.remove(); }
 
-  /* ============================ pausable game clock ============================ */
-  // One clock drives the solo stopwatch, the bot's thinking and the stand timer, so
-  // pausing (or the phone locking: rAF stops) freezes all of them together.
-  var clock = { t: 0, last: null, paused: false, jobs: [] }, raf = 0;
-  function later(ms, fn) { var j = { at: clock.t + ms, fn: fn }; clock.jobs.push(j); return j; }
-  function cancel(j) { if (j) j.dead = true; }
+  /* ============================ the clock ============================ */
+  // Runs only while a question is waiting for an answer, so reading a worked solution
+  // is free. Pausing (or the phone locking: rAF stops) freezes it.
+  var clock = { t: 0, last: null, run: false, paused: false }, raf = 0;
   function frame(now) {
-    if (clock.last !== null && !clock.paused) clock.t += Math.min(now - clock.last, 250);
+    if (clock.last !== null && clock.run && !clock.paused) clock.t += Math.min(now - clock.last, 250);
     clock.last = now;
-    var due = [], keep = [];
-    clock.jobs.forEach(function (j) { if (!j.dead) (j.at <= clock.t ? due : keep).push(j); });
-    clock.jobs = keep;
-    due.sort(function (a, b) { return a.at - b.at; }).forEach(function (j) { if (!j.dead) j.fn(); });
-    if (cur && cur.tick) cur.tick();
+    if (cur) tick();
     raf = requestAnimationFrame(frame);
   }
-  function startClock() { clock.t = 0; clock.last = null; clock.paused = false; clock.jobs = []; if (!raf) raf = requestAnimationFrame(frame); }
-  function stopClock() { if (raf) cancelAnimationFrame(raf); raf = 0; clock.jobs = []; clock.paused = false; }
+  function startClock(t0) { clock.t = t0 || 0; clock.last = null; clock.run = false; clock.paused = false; if (!raf) raf = requestAnimationFrame(frame); }
+  function stopClock() { if (raf) cancelAnimationFrame(raf); raf = 0; clock.run = false; clock.paused = false; }
 
-  /* ============================ X / Y entry ============================ */
-  var inp = { x: "", y: "", focus: "x", fresh: false };
-  function resetInput() { inp.x = ""; inp.y = ""; inp.focus = "x"; inp.fresh = false; }
-  function num(s) { return s === "" || s === "-" ? null : parseInt(s, 10); }
-  function needsOf(ids) { var v = G.handVars(ids.map(card)); return { x: !!v.X, y: !!v.Y, v: !!v.V }; }
-  // -> {x, y}, or null after saying what's missing
-  function readXY(needs) {
-    var x = num(inp.x), y = num(inp.y);
-    if (needs.x && x === null) { toast("Enter a value for <b>X</b> first"); return null; }
-    if (needs.x && x === 0) { toast("<b>X</b> can't be 0"); return null; }
-    if (needs.y && !(y > 0)) { toast("Enter a positive <b>Y</b> too"); inp.focus = "y"; renderInputs(); return null; }
-    return { x: needs.x ? x : 1, y: needs.y ? y : null };
+  /* ============================ a round ============================ */
+  // cur: {cat, kind: "daily"|"extra", date, diff, seed, qs, i, answers: [{v, ok, ms}], input, phase: "ask"|"ok"|"fb"}
+  var cur = null;
+  function startRound(cat, kind, run) {
+    endRound();
+    var date = today(), diff = S.diff, sd = kind === "daily" ? T.dailySeed(date, cat, diff) : seed();
+    if (run) { date = run.date; diff = run.diff; sd = run.seed; }
+    cur = { cat: cat, kind: kind, date: date, diff: diff, seed: sd, qs: T.makeRound(cat, diff, sd, CTX), answers: run ? run.answers : [], input: "", phase: "ask" };
+    cur.i = cur.answers.length;
+    startClock(run ? run.t : 0);
+    renderPlay();
+    ask(run && run.qStart <= run.t ? run.qStart : null);
   }
-  function xyText(x, y, needs) {
-    if (!needs.x && !needs.y) return "any X";
-    return (needs.x ? "X = " + String(x).replace("-", M) : "") + (needs.y ? (needs.x ? ", " : "") + "Y = " + y : "");
+  function ask(qStart) {
+    cur.phase = "ask"; cur.input = "";
+    cur.qStart = qStart == null ? clock.t : qStart;
+    clock.run = true;
+    renderAll();
   }
-  function focusField() { var n = myNeeds(); return inp.focus === "y" && n.y ? "y" : n.x ? "x" : n.y ? "y" : null; }
+  function runKey(cat) { return "run-" + cat; }
+  // a daily round in progress survives the app being closed (or the phone killing it)
+  function saveRun() {
+    if (!cur || cur.kind !== "daily") return;
+    save(runKey(cur.cat), { date: cur.date, diff: cur.diff, seed: cur.seed, answers: cur.answers, t: Math.round(clock.t), qStart: Math.round(cur.qStart) });
+  }
+  function savedRun(cat) {
+    var r = load(runKey(cat), null), t = today();
+    if (!r || r.date !== t || doneToday(cat) || !Array.isArray(r.answers) || r.answers.length >= T.ROUND) return null;
+    return r;
+  }
+  function doneToday(cat) { return !!(DAYS[today()] || {})[cat]; }
+
   function pressKey(k) {
-    if (!cur || !inputOpen()) return;
-    var f = focusField();
-    if (!f) return;
-    var s = inp[f];
+    if (!cur || cur.phase !== "ask" || clock.paused) return;
+    var s = cur.input;
     if (k === "back") s = s.slice(0, -1);
-    else if (k === "neg") {
-      if (f === "y") { toast("<b>Y</b> must be positive"); return; }
-      s = s.charAt(0) === "-" ? s.slice(1) : "-" + s;
-    } else {
-      if (inp.fresh) s = "";                          // after a check, typing starts a new number
+    else if (k === "neg") s = s.charAt(0) === "-" ? s.slice(1) : "-" + s;
+    else {
       var digits = s.replace("-", "");
-      if ((digits === "" && k === "0") || digits.length >= 6) return;
+      if (digits.length >= 6) return;
+      if (digits === "0") s = s.replace("0", "");     // no leading zeros
       s += k;
     }
-    inp.fresh = false; inp[f] = s; inp.focus = f;
-    inputChanged();
+    cur.input = s;
+    renderAns();
   }
-  function stepKey(d) {
-    if (!cur || !inputOpen()) return;
-    var f = focusField();
-    if (!f) return;
-    var v = num(inp[f]) || 0;
-    v = f === "y" ? Math.max(1, v + d) : v + d;
-    if (v === 0) v += d;                              // X skips 0
-    inp[f] = String(v); inp.fresh = false; inp.focus = f;
-    inputChanged();
+  function submit() {
+    if (!cur || clock.paused) return;
+    if (cur.phase === "ok" || cur.phase === "fb") return next();
+    if (cur.input === "" || cur.input === "-") { toast("Type your answer first (or skip)"); return; }
+    answer(parseInt(cur.input, 10));
   }
-  function inputChanged() {
-    if (cur.fb) { cur.fb = null; renderHand(); }
-    else if (S.live && cur.kind === "practice") renderHand();
-    renderInputs(); renderVerdict();
+  function skip() { if (cur && cur.phase === "ask" && !clock.paused) answer(null); }
+  function answer(val) {
+    var q = cur.qs[cur.i], ok = T.isRight(q, val);
+    clock.run = false;
+    cur.answers.push({ v: val, ok: ok, ms: Math.max(0, Math.round(clock.t - cur.qStart)) });
+    saveRun();
+    cur.phase = ok ? "ok" : "fb";
+    vibrate(ok ? 18 : [15, 50, 15]);
+    renderAll();
+    if (ok) cur.timer = setTimeout(next, 650);
   }
+  function next() {
+    if (!cur) return;
+    clearTimeout(cur.timer);
+    if (cur.phase !== "ok" && cur.phase !== "fb") return;
+    cur.i++;
+    if (cur.i >= cur.qs.length) return finish();
+    ask();
+  }
+  function finish() {
+    var r = cur, first = false;
+    stopClock();
+    var rec = {
+      score: scoreOf(r.answers), ms: timeOf(r.answers), diff: r.diff, at: Date.now(),
+      a: r.answers.map(function (a, k) { return { v: a.v, ok: a.ok, ms: a.ms, c: r.qs[k].answer, t: r.qs[k].type }; })
+    };
+    if (r.kind === "daily") {
+      DAYS[r.date] = DAYS[r.date] || {};
+      if (!DAYS[r.date][r.cat]) { DAYS[r.date][r.cat] = rec; first = true; saveDays(); }
+      drop(runKey(r.cat));
+    }
+    cur = null;
+    vibrate(rec.score === T.ROUND ? [30, 40, 30] : 30);
+    resultsScreen({ cat: r.cat, kind: r.kind, date: r.date, diff: r.diff, qs: r.qs, answers: r.answers }, first);
+  }
+  function endRound() { if (cur) clearTimeout(cur.timer); stopClock(); cur = null; closeOverlay(); }
 
-  /* ============================ shared game screen ============================ */
-  var cur = null;          // the active game (solo / practice / duel)
-  function myIds() { return cur.kind === "duel" ? cur.you.hand : cur.g.hand; }
-  function myCards() { return myIds().map(card); }
-  function myV() { return cur.kind === "duel" ? 1 + cur.wins.you : cur.g.V(); }
-  function myNeeds() { return needsOf(myIds()); }
-  function inputOpen() {
-    if (cur.kind === "duel") return cur.phase === "play" || (cur.phase === "stand" && cur.stand.by === "bot");
-    return !cur.g.done;
-  }
-  var KEYS_HTML = '<div class="keys">' + ["1", "2", "3", "4", "5", "back", "6", "7", "8", "9", "0", "neg"].map(function (k) {
-    var lab = k === "back" ? "⌫" : k === "neg" ? "±" : k;
-    var aria = k === "back" ? "delete" : k === "neg" ? "plus or minus" : k;
+  /* ============================ play screen ============================ */
+  var KEYS = ["1", "2", "3", "back", "4", "5", "6", "neg", "7", "8", "9", "0"];
+  var KEYS_HTML = '<div class="keys" id="g-keys">' + KEYS.map(function (k) {
+    var lab = k === "back" ? "⌫" : k === "neg" ? "±" : k, aria = k === "back" ? "delete" : k === "neg" ? "plus or minus" : k;
     return '<button class="key' + (k.length > 1 ? " alt" : "") + '" data-act="key" data-arg="' + k + '" aria-label="' + aria + '">' + lab + "</button>";
   }).join("") + "</div>";
-
-  function renderGame() {
-    app.innerHTML = '<div class="game" id="g"><div class="bar" id="g-bar"></div>' +
-      (cur.kind === "duel" ? '<div class="opp" id="g-opp"></div>' : '<div class="scorebar"><i id="g-prog"></i></div>') +
-      '<div class="table" id="g-table"><div class="info" id="g-info"></div><div class="hand" id="g-hand"></div><div class="verdict" id="g-verdict" aria-live="polite"></div></div>' +
-      '<div class="pad"><div class="inputs" id="g-inputs"></div>' + KEYS_HTML + '<div class="acts" id="g-acts"></div></div></div>';
-    refresh();
+  function lineHtml(answers, at, big) {
+    var n = T.ROUND, stops = "";
+    for (var k = 0; k < n; k++) {
+      var a = answers[k];
+      stops += '<i class="' + (a ? (a.ok ? "ok" : a.v === null ? "sk" : "no") : k === at ? "cur" : "") + '"></i>';
+    }
+    return '<span class="line' + (big ? " big" : "") + '" style="--f:' + Math.max(0, Math.min(at, n - 1) / (n - 1)).toFixed(3) + '" aria-hidden="true">' + stops + "</span>";
   }
-  function refresh() { renderBar(); renderOpp(); renderInfo(); renderVerdict(); renderHand(); renderInputs(); renderActs(); }
+  function renderPlay() {
+    app.innerHTML = '<div class="game" id="g"><div class="bar"><button class="ib" data-act="pause" aria-label="Pause">❚❚</button>' +
+      '<span class="ttl">' + CAT_INFO[cur.cat].name + '</span><span class="sp"></span>' +
+      '<span class="chip">⏱ <span id="g-clock">' + fmtTime(clock.t) + '</span></span><button class="skip" id="g-skip" data-act="skip">Skip</button></div>' +
+      '<span id="g-line"></span>' +
+      '<div class="stage" id="g-stage"><div class="qp" id="g-prompt"></div><div class="qx" id="g-q"></div><div class="fbk" id="g-fb" aria-live="polite"></div></div>' +
+      '<div class="pad"><div class="ans" id="g-ans"></div>' + KEYS_HTML + '<button class="go" id="g-go" data-act="go"></button></div></div>';
+  }
   function setHtml(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; return el; }
-  function chip(html, cls) { return '<span class="chip' + (cls ? " " + cls : "") + '">' + html + "</span>"; }
-  function mv(v) { return '<i class="mv">' + v + "</i>"; }
-
-  function renderBar() {
-    if (cur.kind === "duel") {
-      setHtml("g-bar", '<button class="ib" data-act="pause" aria-label="Pause">❚❚</button><span class="ttl">Duel</span><span class="sp"></span>' +
-        chip("You <b>" + cur.score.you + "</b> · <b>" + cur.score.bot + "</b> Bot") + chip("to 21", "dim"));
-      return;
-    }
-    var g = cur.g;
-    if (cur.practice) {
-      setHtml("g-bar", '<button class="ib" data-act="quit" aria-label="Back">‹</button><span class="ttl">Practice</span><span class="sp"></span>' +
-        chip("✓ " + g.scored.length + " solved") + '<button class="ib" data-act="hint" aria-label="Hint">💡</button>');
-    } else {
-      setHtml("g-bar", '<button class="ib" data-act="pause" aria-label="Pause">❚❚</button><span class="ttl">Solo</span><span class="sp"></span>' +
-        chip('⏱ <span id="g-clock">' + fmtTime(soloElapsed()) + "</span>") +
-        (cur.penalty ? chip("+" + cur.penalty / 1000 + " s", "pen") : "") +
-        chip(G.shapesHtml(1) + " " + g.icons + "/" + g.target));
-    }
-    var p = $("#g-prog");
-    if (p) p.style.width = (cur.practice ? 0 : Math.min(100, 100 * g.icons / g.target)) + "%";
+  function renderAll() {
+    if (!cur || !$("#g")) return;
+    var q = cur.qs[cur.i], ask = cur.phase === "ask";
+    var lineEl = $("#g-line");
+    lineEl.outerHTML = lineHtml(cur.answers, cur.i).replace('<span class="line', '<span id="g-line" class="line');
+    setHtml("g-prompt", '<span class="dim">' + q.n + " / " + T.ROUND + "</span> · " + q.prompt);
+    setHtml("g-q", q.html);
+    renderAns(); renderFb();
+    setHtml("g-go", ask ? "Submit" : cur.phase === "ok" ? "Next ›" : cur.i + 1 >= T.ROUND ? "See results ›" : "Next question ›");
+    $("#g-keys").classList.toggle("off", !ask);
+    $("#g-skip").disabled = !ask;
+    fitQ();
   }
-  function renderInfo() {
-    var ids = myIds(), needs = myNeeds(), h = chip(mv("N") + " = " + ids.length);
-    if (needs.v) h += chip(mv("V") + " = " + myV());
-    if (cur.kind === "duel") {
-      if (cur.phase === "stand") h += '<span class="timer" id="g-timer"></span>';
-    } else h += chip(DECK_ICON + " " + cur.g.deck.left());
-    setHtml("g-info", h);
-    if (cur.tick) cur.tick();
+  function answerText(q) {
+    var alt = q.cards ? X21.solveX(q.cards, 30).filter(function (x) { return x !== q.answer; }) : [];
+    return (q.label ? q.label + " = " : "") + sn(q.answer) + (alt.length ? " (or " + alt.map(sn).join(", ") + ")" : "");
   }
-  function liveEval() {
-    if (cur.kind !== "practice" || !S.live) return null;
-    var needs = myNeeds(), x = num(inp.x), y = num(inp.y);
-    if ((needs.x && !x) || (needs.y && !(y > 0))) return null;
-    return G.evalHand(myCards(), { X: needs.x ? x : 1, Y: needs.y ? y : null, N: myIds().length, V: myV() });
-  }
-  function renderHand() {
-    var el = $("#g-hand");
+  function renderAns() {
+    var el = $("#g-ans");
     if (!el) return;
-    var ids = myIds(), fb = cur.fb, live = !fb && liveEval();
-    el.innerHTML = ids.map(function (id, k) {
-      var o = { cls: "zoomable" + (cur.seen[id] ? "" : " new"), attrs: ' data-act="zoom" data-arg="' + id + '"' };
-      if (fb && fb.values) { o.value = fb.values[k]; o.vcls = fb.cls; }
-      else if (live) { o.value = live.values[k]; o.vcls = "live"; }
-      return G.cardHtml(card(id), o);
-    }).join("");
-    ids.forEach(function (id) { cur.seen[id] = true; });
-    fitHand();
+    var q = cur.qs[cur.i], a = cur.answers[cur.i], val;
+    if (cur.phase === "ask") val = cur.input === "" ? '<span class="ph">?</span>' : esc(cur.input.replace("-", M));
+    else if (a.v === null) val = '<span class="dim">skipped</span>';
+    else val = '<span class="you">' + sn(a.v) + "</span>" + (a.ok ? " ✓" : "");
+    el.className = "ans" + (cur.phase === "ok" ? " good" : cur.phase === "fb" ? " bad" : "");
+    el.innerHTML = (q.label ? '<span class="lab">' + q.label + '</span><span class="eqs">=</span>' : "") + "<span>" + val + "</span>";
   }
-  // size the cards to the space left between the header and the keypad
-  function fitHand() {
-    var table = $("#g-table"), hand = $("#g-hand");
-    if (!table || !hand) return;
-    var n = Math.max(2, hand.children.length), gap = 8, cs = getComputedStyle(table);
-    var W = table.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    var H = table.clientHeight - $("#g-info").offsetHeight - $("#g-verdict").offsetHeight -
-      2 * (parseFloat(cs.rowGap) || 8) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 4;
-    var best = 0, bestCols = n;
-    [n, Math.ceil(n / 2)].forEach(function (cols) {
-      var rows = Math.ceil(n / cols);
-      var cw = Math.min(170, (W - (cols - 1) * gap) / cols, (H - (rows - 1) * gap) / (rows * 1.4));
-      if (cw > best + 0.5) { best = cw; bestCols = cols; }
-    });
-    best = Math.max(44, Math.floor(best));
-    hand.style.setProperty("--cw", best + "px");
-    hand.style.setProperty("--gap", gap + "px");
-    hand.style.maxWidth = (bestCols * best + (bestCols - 1) * gap) + "px";
-  }
-  window.addEventListener("resize", function () { if (cur) fitHand(); });
-  function statusNote(status) {
-    return status === "win" ? ' <span class="good">= 21 ✓</span>' : status === "bust" ? ' <span class="bad">bust</span>' :
-      status === "twenty" ? ' <span class="bad">20 is bust</span>' : status === "undef" ? ' <span class="bad">undefined</span>' : "";
-  }
-  function totalLine(ev) {
-    if (!ev.total) return '<span class="bad">Undefined</span> <span class="dim">(÷0, or off the end of a sequence card)</span>';
-    var approx = ev.total.d !== 1n && !/\./.test(G.qstr(ev.total)) ? ' <span class="dim">≈ ' + G.qapprox(ev.total) + "</span>" : "";
-    return "Total " + qh(ev.total) + approx;
-  }
-  function renderVerdict() {
-    var h = "";
-    if (cur.kind === "duel") h = duelVerdict();
-    else if (cur.fb && cur.fb.msg) h = cur.fb.msg;
-    else {
-      var live = liveEval();
-      if (live) h = '<span class="dim">' + totalLine(live) + "</span>" + statusNote(live.status);
+  function renderFb() {
+    var q = cur.qs[cur.i], a = cur.answers[cur.i], h = "";
+    if (cur.phase === "ok") h = '<b class="good">✓ Correct</b> <span class="dim">' + fmtSec(a.ms) + "</span>";
+    else if (cur.phase === "fb") {
+      h = '<b class="bad">' + (a.v === null ? "Skipped." : "✗ Not quite.") + "</b> The answer is <b>" + answerText(q) + "</b>" +
+        '<div class="why">' + q.why + "</div>";
     }
-    setHtml("g-verdict", h);
-    fitHand();                                        // a two-line verdict leaves less room for cards
+    setHtml("g-fb", h);
   }
-  function fieldHtml(f, need, on) {
-    var s = inp[f];
-    var val = !need ? '<span class="na">any</span>' : s === "" ? '<span class="ph">?</span>' : esc(s.replace("-", M));
-    return '<button class="field' + (on ? " on" : "") + '" data-act="focus" data-arg="' + f + '"' + (need ? "" : " disabled") +
-      ' aria-label="' + f.toUpperCase() + ' value"><span class="lab">' + f.toUpperCase() + "</span>=<span>" + val + "</span></button>";
+  function tick() { var el = document.getElementById("g-clock"); if (el) el.textContent = fmtTime(clock.t); }
+  // size the question to the space between the prompt and the keypad
+  function fitQ() {
+    var stage = $("#g-stage"), qx = $("#g-q");
+    if (!stage || !qx) return;
+    var cs = getComputedStyle(stage), gap = parseFloat(cs.rowGap) || 8;
+    var W = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var H = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - $("#g-prompt").offsetHeight - $("#g-fb").offsetHeight - 2 * gap - 4;
+    var hand = qx.querySelector(".hand");
+    if (hand) {
+      var n = hand.children.length, g = 8, nl = qx.querySelector(".nline");
+      qx.style.fontSize = "";
+      var cw = Math.floor(Math.min(150, (W - (n - 1) * g) / n, (H - (nl ? nl.offsetHeight + 8 : 0)) / 1.4));
+      hand.style.setProperty("--cw", Math.max(48, cw) + "px");
+      hand.style.setProperty("--gap", g + "px");
+      return;
+    }
+    var base = 54;
+    qx.style.fontSize = base + "px";
+    var s = Math.min(1, W / Math.max(1, qx.scrollWidth), H / Math.max(1, qx.scrollHeight));
+    qx.style.fontSize = Math.max(15, Math.floor(base * s * 0.98)) + "px";
   }
-  function renderInputs() {
-    var needs = myNeeds(), f = focusField(), open = inputOpen(), dis = open && f ? "" : " disabled";
-    var keys = $("#g .keys");
-    if (keys) keys.classList.toggle("off", !!dis);
-    setHtml("g-inputs", '<button class="step" data-act="step" data-arg="-1"' + dis + ' aria-label="minus one">' + M + "1</button>" +
-      fieldHtml("x", needs.x, open && f === "x") + (needs.y ? fieldHtml("y", true, open && f === "y") : "") +
-      '<button class="step" data-act="step" data-arg="1"' + dis + ' aria-label="plus one">+1</button>');
-  }
-  function renderActs() {
-    if (cur.kind === "duel") return setHtml("g-acts", duelActs());
-    var g = cur.g, n = g.hand.length;
-    setHtml("g-acts",
-      '<button class="act" data-act="mulligan">↺ Mulligan<small>2 new cards</small></button>' +
-      '<button class="act" data-act="draw"' + (g.canDraw() ? "" : " disabled") + ">＋ Draw<small>" + (n < g.maxHand ? "N → " + (n + 1) : "max " + g.maxHand + " cards") + "</small></button>" +
-      '<button class="act call" data-act="call">Call 21<small>check my X</small></button>');
-  }
-  function renderOpp() { if (cur.kind === "duel") duelOpp(); }
-  function workingCards(ids, ev) {
-    return '<div class="hand">' + ids.map(function (id, k) { return G.cardHtml(card(id), { value: ev.values[k], vcls: "good" }); }).join("") + "</div>";
-  }
+  window.addEventListener("resize", function () { if (cur) fitQ(); });
 
-  /* ============================ solo & practice ============================ */
-  function startSolo(practice) {
-    var ids = deckList();
-    if (ids.length < 10) { toast("Choose more cards in Settings (at least 10)"); return; }
-    endGame();
-    cur = {
-      kind: practice ? "practice" : "solo", practice: practice,
-      g: new G.Solo(CARDS, ids, { rng: G.mulberry32(seed()), endless: practice }),
-      penalty: 0, fb: null, seen: {}, hint: 0, tick: practice ? null : soloTick
-    };
-    resetInput(); startClock(); renderGame();
-  }
-  function soloElapsed() { return clock.t + cur.penalty; }
-  function soloTick() { var el = document.getElementById("g-clock"); if (el) el.textContent = fmtTime(soloElapsed()); }
-  function newHandState() { cur.fb = null; cur.seen = {}; cur.hint = 0; resetInput(); }
-  function soloCall() {
-    var g = cur.g, needs = myNeeds(), xy = readXY(needs);
-    if (!xy || g.done) return;
-    var ids = g.hand.slice(), r = g.call(xy.x, xy.y);
-    if (r.ok) {
-      vibrate(25);
-      banner("<b>21 ✓ " + xyText(xy.x, xy.y, needs) + " · +" + r.icons + " " + G.shapesHtml(1) + "</b>" + workingCards(ids, r.ev));
-      newHandState();
-      if (r.done) { refresh(); return soloFinish(); }
-      refresh();
-      return;
-    }
-    vibrate([15, 50, 15]);
-    var pen = !cur.practice && S.penalty ? S.penalty : 0;
-    cur.penalty += pen * 1000;
-    cur.fb = {
-      values: r.ev.values, cls: "bad",
-      msg: '<span class="bad">✗</span> ' + totalLine(r.ev) + statusNote(r.ev.status) + (r.ev.status === "ok" ? ' <span class="dim">— not 21</span>' : "") +
-        (pen ? ' <span class="warn">+' + pen + " s</span>" : "")
-    };
-    inp.fresh = true;
-    renderBar(); renderHand(); renderVerdict();
-  }
-  function soloDraw() {
-    if (cur.g.draw() === null) return;
-    cur.fb = null; cur.hint = 0; inp.fresh = true;
-    refresh();
-  }
-  function soloMulligan() {
-    var g = cur.g;
-    if (g.done) return;
-    if (S.missed) {
-      var needs = myNeeds(), an = G.analyze(g.handCards(), { V: g.V() });
-      if (an.solutions.length) toast("Missed one: that hand made 21 with <b>" + xyText(an.solutions[0].x, an.solutions[0].y, needs) + "</b>");
-    }
-    g.mulligan();
-    newHandState(); refresh();
-  }
-  function practiceHint() {
-    if (!cur || !cur.practice) return;
-    var g = cur.g, needs = myNeeds(), an = G.analyze(g.handCards(), { V: g.V() });
-    if (cur.hint === 0) {
-      cur.hint = 1;
-      cur.fb = {
-        msg: an.solutions.length ? '<span class="good">21 is possible with these cards.</span> <span class="dim">Tap 💡 again to see how.</span>' :
-          '<span class="warn">No whole-number X makes 21 here.</span> <span class="dim">' +
-          (an.best ? "Best valid total: " + qh(an.best.total) + " (" + xyText(an.best.x, an.best.y, needs) + ")." : "Every total is bust.") + " Draw or mulligan.</span>"
-      };
-      renderHand(); renderVerdict();
-      return;
-    }
-    var pick = an.solutions[0] || an.best;
-    if (!pick) return;
-    inp.x = needs.x ? String(pick.x) : ""; inp.y = needs.y ? String(pick.y) : ""; inp.fresh = true;
-    var ev = G.evalHand(g.handCards(), { X: pick.x, Y: pick.y, N: g.hand.length, V: g.V() });
-    cur.fb = {
-      values: ev.values, cls: an.solutions.length ? "good" : "live",
-      msg: an.solutions.length ? '<span class="good">' + xyText(pick.x, pick.y, needs) + " makes 21.</span> <span class=\"dim\">Tap Call 21 to bank it.</span>" :
-        '<span class="dim">Closest valid: ' + xyText(pick.x, pick.y, needs) + " → " + qh(ev.total) + ".</span>"
-    };
-    renderHand(); renderVerdict(); renderInputs();
-  }
-  function soloFinish() {
-    var ms = soloElapsed(), key = soloKey(), list = BEST[key] || [], g = cur.g;
-    var rec = { ms: Math.round(ms), date: Date.now(), hands: g.scored.length, wrong: g.stats.wrong, mull: g.stats.mulligans };
-    list.push(rec);
-    list.sort(function (a, b) { return a.ms - b.ms; });
-    list = list.slice(0, 10); BEST[key] = list; save("best", BEST);
-    var rank = list.indexOf(rec);
-    cur.over = true; stopClock();
-    overlay("<h2>" + g.icons + " icons — done!</h2>" +
-      '<div class="huge">' + fmtTime(ms) + "</div>" +
-      '<div class="note">' + (cur.penalty ? "incl. +" + cur.penalty / 1000 + " s penalties · " : "") + g.scored.length + " hands scored · " +
-      g.stats.wrong + " wrong calls · " + g.stats.mulligans + " mulligans</div>" +
-      (rank === 0 && list.length > 1 ? '<p class="good"><b>New personal best!</b></p>' : rank === 0 ? '<p class="good"><b>First recorded time!</b></p>' : '<p class="dim">#' + (rank + 1) + " of your top " + list.length + "</p>") +
-      recordsTable(list, rec) +
-      '<div class="note" style="margin-top:6px">' + esc(deckLabel()) + " · " + (S.penalty ? S.penalty + " s per wrong call" : "no penalty") + "</div>" +
-      '<div class="btns"><button class="btn" data-act="quit">Menu</button><button class="btn gold" data-act="again">Play again</button></div>');
-  }
-  function recordsTable(list, mark) {
-    return '<table class="rec">' + list.slice(0, 5).map(function (r, k) {
-      var d = new Date(r.date);
-      return "<tr" + (r === mark ? ' class="good"' : "") + "><td>" + (k + 1) + ". <b>" + fmtTime(r.ms) + "</b></td><td>" + r.hands + " hands · " + r.wrong + " wrong</td><td>" +
-        d.toLocaleDateString() + "</td></tr>";
-    }).join("") + "</table>";
-  }
-
-  /* ============================ duel vs bot ============================ */
-  function startDuel() {
-    var ids = deckList();
-    if (ids.length < 10) { toast("Choose more cards in Settings (at least 10)"); return; }
-    endGame();
-    var rng = G.mulberry32(seed());
-    cur = {
-      kind: "duel", rng: rng, deck: new G.Deck(ids, rng), level: S.bot,
-      score: { you: 0, bot: 0 }, wins: { you: 0, bot: 0 }, games: 0, jobs: [], seen: {}, tick: duelTick
-    };
-    startClock();
-    duelNewGame(true);
-  }
-  function botCards() { return cur.bot.hand.map(card); }
-  function botV() { return 1 + cur.wins.bot; }
-  function deal(h) { var id = cur.deck.draw(); if (id !== null) h.push(id); return id; }
-  function duelNewGame(first) {
-    var d = cur;
-    closeOverlay();
-    cancel(d.botJob); d.jobs.forEach(cancel); d.jobs = [];
-    if (d.you) { d.deck.toss(d.you.hand); d.deck.toss(d.bot.hand); }
-    d.you = { hand: [], ev: null };
-    d.bot = { hand: [], x: null, y: null, total: null, status: "Thinking…" };
-    for (var k = 0; k < 2; k++) { deal(d.you.hand); deal(d.bot.hand); }
-    d.phase = "play"; d.stand = null; d.endAt = 0; d.result = null; d.timeline = null; d.botEv = null;
-    d.games++; d.fb = null; d.seen = {};
-    resetInput();
-    if (first) renderGame(); else refresh();
-    botSchedule();
-  }
-  function botSchedule() {
-    var d = cur;
-    cancel(d.botJob);
-    if (d.phase !== "play") return;
-    d.bot.status = "Thinking…";
-    d.botJob = later(G.botThinkMs(d.level, botCards(), d.rng), botAct);
-  }
-  function botAct() {
-    var d = cur;
-    if (!d || d.kind !== "duel" || d.phase !== "play") return;
-    var dec = G.botDecide(botCards(), { V: botV() }, d.level, null);
-    if (dec.act === "call") { d.bot.x = dec.x; d.bot.y = dec.y; return duelEnd("bot", "The bot called 21."); }
-    if (dec.act === "stand") {
-      d.bot.x = dec.x; d.bot.y = dec.y; d.bot.total = dec.total;
-      d.phase = "stand"; d.stand = { by: "bot", total: dec.total }; d.endAt = clock.t + G.STAND_MS;
-      d.bot.status = "Stands on " + G.qstr(dec.total);
-      d.jobs.push(later(G.STAND_MS, duelBuzzer));
-      vibrate(30);
-      refresh();
-      return;
-    }
-    if (dec.act === "draw") {
-      d.bot.status = "Drawing…"; duelOpp();
-      d.botJob = later(650, function () {
-        if (d.phase !== "play") return;
-        if (deal(d.bot.hand) === null) { d.bot.status = "Stuck"; duelOpp(); return; }
-        botSchedule(); duelOpp();
-      });
-      return;
-    }
-    d.bot.status = "Stuck — no valid total"; duelOpp();
-  }
-  function duelDraw() {
-    var d = cur;
-    if (!inputOpen()) return;
-    if (d.you.hand.length >= G.MAX_HAND) return;
-    if (deal(d.you.hand) === null) { toast("The deck is empty"); return; }
-    d.fb = null; inp.fresh = true;
-    refresh();
-  }
-  function yourEval(xy) {
-    var ev = G.evalHand(myCards(), { X: xy.x, Y: xy.y, N: cur.you.hand.length, V: myV() });
-    cur.you.ev = ev; cur.you.x = xy.x; cur.you.y = xy.y;
-    return ev;
-  }
-  function duelCall() {
-    if (!inputOpen()) return;
-    var xy = readXY(myNeeds());
-    if (!xy) return;
-    var ev = yourEval(xy);
-    if (ev.status === "win") return duelEnd("you", "21! You win the game.");
-    youOut("You called 21 but your total is " + qh(ev.total) + " — you're out of this game.");
-  }
-  function duelStand() {
-    var d = cur;
-    if (d.phase !== "play") return;
-    var xy = readXY(myNeeds());
-    if (!xy) return;
-    var ev = yourEval(xy);
-    if (ev.status === "win") return duelEnd("you", "That's exactly 21 — you win the game.");
-    if (!G.isValid(ev.status)) {
-      return youOut("You stood on " + qh(ev.total) + (ev.status === "twenty" ? " — exactly 20 is bust." : ev.status === "undef" ? " (undefined)." : " — that's bust."));
-    }
-    cancel(d.botJob);
-    d.phase = "stand"; d.stand = { by: "you", total: ev.total }; d.endAt = clock.t + G.STAND_MS;
-    // you're locked in, so the bot's whole reply can be decided now and replayed in real time
-    d.timeline = G.botTimeline(CARDS, d.bot.hand, function () { return d.deck.draw(); }, { V: botV() }, d.level, ev.total, G.STAND_MS, d.rng);
-    d.bot.status = "Thinking…";
-    d.timeline.forEach(function (e) { d.jobs.push(later(e.t, function () { applyBot(e); })); });
-    d.jobs.push(later(G.STAND_MS, duelBuzzer));
-    d.fb = { values: ev.values, cls: "good" };
-    refresh();
-  }
-  function applyBot(e) {
-    var d = cur;
-    if (e.done || d.phase !== "stand") return;
-    e.done = true;
-    if (e.act === "draw") { d.bot.hand.push(e.id); d.bot.status = "Drew a card…"; }
-    else if (e.act === "call") { d.bot.x = e.x; d.bot.y = e.y; return duelEnd("bot", "The bot called 21."); }
-    else if (e.act === "hold") { d.bot.x = e.x; d.bot.y = e.y; d.bot.total = e.total; d.bot.status = "Has an answer…"; }
-    else d.bot.status = "Stuck";
-    duelOpp();
-  }
-  function duelSkip() {
-    var d = cur;
-    if (d.phase !== "stand" || d.stand.by !== "you") return;
-    var tl = d.timeline;                              // duelEnd() clears d.timeline mid-loop if the bot calls 21
-    for (var i = 0; i < tl.length && d.phase === "stand"; i++) applyBot(tl[i]);
-    if (d.phase === "stand") duelBuzzer();
-  }
-  function duelBuzzer() {
-    var d = cur;
-    if (d.phase !== "stand") return;
-    var st = d.stand.total;
-    if (d.stand.by === "you") {
-      if (d.bot.total && G.qcmp(d.bot.total, st) > 0) return duelEnd("bot", "Time! The bot's " + qh(d.bot.total) + " beats your " + qh(st) + ".");
-      return duelEnd("you", "Time! The bot couldn't beat your " + qh(st) + ".");
-    }
-    // the bot stood: your answer is whatever X (and Y) you have entered at the buzzer
-    var needs = myNeeds(), x = num(inp.x), y = num(inp.y);
-    if ((needs.x && !x) || (needs.y && !(y > 0))) return duelEnd("bot", "Time! No answer entered — hesitating players are out.");
-    var ev = yourEval({ x: needs.x ? x : 1, y: needs.y ? y : null });
-    if (!G.isValid(ev.status)) return duelEnd("bot", "Your " + qh(ev.total) + (ev.status === "twenty" ? " is exactly 20 — bust." : " is bust.") + " The bot's " + qh(st) + " wins.");
-    var c = G.qcmp(ev.total, st);
-    if (c > 0) return duelEnd("you", "Your " + qh(ev.total) + " beats the bot's " + qh(st) + "!");
-    duelEnd("bot", c === 0 ? "Tie on " + qh(st) + " — ties go to the player who stood." : "The bot's " + qh(st) + " beats your " + qh(ev.total) + ".");
-  }
-  // a wrong call (or a bust stand) knocks you out; the bot then only needs a valid total
-  function youOut(msg) {
-    var d = cur, c = G.botCfg(d.level);
-    var pick = null;
-    if (d.stand && d.stand.by === "bot") pick = { x: d.bot.x, y: d.bot.y };
-    else {
-      var an = G.analyze(botCards(), { V: botV() }, { xMax: c.range, yMax: c.yMax, maxSolutions: 1 });
-      pick = an.solutions[0] || an.best;
-    }
-    if (pick) { d.bot.x = pick.x; d.bot.y = pick.y; return duelEnd("bot", msg + " The bot wins by default."); }
-    duelEnd(null, msg + " The bot has no valid total either — nobody scores.");
-  }
-  function duelEnd(winner, msg) {
-    var d = cur;
-    if (d.phase === "over") return;
-    cancel(d.botJob); d.jobs.forEach(cancel); d.jobs = [];
-    if (d.timeline) d.timeline.forEach(function (e) { if (!e.done && e.act === "draw") d.deck.toss([e.id]); });
-    d.timeline = null;
-    d.phase = "over";
-    if (d.bot.x !== null) d.botEv = G.evalHand(botCards(), { X: d.bot.x, Y: d.bot.y, N: d.bot.hand.length, V: botV() });
-    if (d.you.ev) d.fb = { values: d.you.ev.values, cls: G.isValid(d.you.ev.status) ? "good" : "bad" };
-    var pts = 0;
-    if (winner) {
-      pts = G.handIcons((winner === "you" ? d.you.hand : d.bot.hand).map(card));
-      d.score[winner] += pts; d.wins[winner]++;
-    }
-    d.bot.status = winner === "bot" ? "Wins this game" : winner === "you" ? "Loses this game" : "No winner";
-    d.result = { winner: winner, msg: msg, pts: pts };
-    d.matchOver = d.score.you >= G.TARGET || d.score.bot >= G.TARGET;
-    vibrate(winner === "you" ? 40 : [20, 60, 20]);
-    refresh();
-    if (d.matchOver) {
-      var won = d.score.you > d.score.bot;
-      later(900, function () {
-        overlay("<h2>" + (won ? "You win the match!" : d.score.you === d.score.bot ? "It's a draw!" : "The bot wins the match") + "</h2>" +
-          '<div class="huge">' + d.score.you + " – " + d.score.bot + "</div>" +
-          '<p class="note">' + d.games + " games · bot: " + G.botCfg(d.level).label + " · each game won scores the difficulty icons on the winning hand</p>" +
-          '<div class="btns"><button class="btn" data-act="quit">Menu</button><button class="btn gold" data-act="again">Rematch</button></div>');
-      });
-    }
-  }
-  function duelTick() {
-    var d = cur, el = document.getElementById("g-timer");
-    if (!el || d.phase !== "stand") return;
-    var left = Math.max(0, d.endAt - clock.t), s = Math.ceil(left / 1000);
-    var html = "⏱ " + Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + (s % 60) + ' <span class="dim">' + (d.stand.by === "you" ? "bot's turn" : "beat " + G.qstr(d.stand.total)) + "</span>";
-    if (el.innerHTML !== html) el.innerHTML = html;
-    el.className = "timer" + (left < 10000 ? " low" : "");
-  }
-  function ocard(c, val) {
-    return '<span class="oc lv' + c.level + (c.seq ? " seqc" : "") + (c.set === "limited" ? " lim" : "") + '" data-act="zoom" data-arg="' + c.i + '">' +
-      '<span class="ocf">' + (c.seq ? esc(c.name) : c.r.h) + "</span>" + (val !== undefined ? '<span class="ocv">' + (val ? qh(val) : "?") + "</span>" : "") + "</span>";
-  }
-  function duelOpp() {
-    var d = cur, b = d.bot, ev = d.phase === "over" ? d.botEv : null;
-    var hot = (d.phase === "stand" && d.stand.by === "bot") || /called|stands|wins/i.test(b.status);
-    setHtml("g-opp", '<div class="opp-h"><b>🤖 Bot</b><span class="dim">' + G.botCfg(d.level).label + " · " + mv("N") + " = " + b.hand.length + "</span>" +
-      '<span class="st' + (hot ? " hot" : "") + '">' + esc(b.status) + "</span></div>" +
-      '<div class="ochips">' + b.hand.map(function (id, k) { return ocard(card(id), ev ? ev.values[k] : undefined); }).join("") + "</div>" +
-      (ev ? '<div class="opp-t">' + xyText(b.x, b.y, needsOf(b.hand)) + " → " + totalLine(ev) + statusNote(ev.status) + "</div>" : ""));
-  }
-  function duelVerdict() {
-    var d = cur, r = d.result;
-    if (d.phase === "over") {
-      return '<span class="' + (r.winner === "you" ? "good" : r.winner ? "bad" : "warn") + '">' + r.msg + "</span>" +
-        (r.pts ? ' <span class="dim">' + (r.winner === "you" ? "You" : "Bot") + " +" + r.pts + "</span>" : "");
-    }
-    if (d.phase === "stand" && d.stand.by === "you") return '<span class="good">You stand on ' + qh(d.stand.total) + '</span> <span class="dim">— the bot has 60 s to beat it</span>';
-    if (d.phase === "stand") return '<span class="warn">Beat ' + qh(d.stand.total) + '!</span> <span class="dim">Your X counts when time runs out.</span>';
-    return '<span class="dim">Make 21 and call it, or stand on your best.</span>';
-  }
-  function duelActs() {
-    var d = cur, n = d.you.hand.length;
-    if (d.phase === "over") {
-      return d.matchOver ? '<button class="act" data-act="quit">Menu</button><button class="act call" data-act="again" style="grid-column:span 2">Rematch</button>' :
-        '<button class="act call wide" data-act="next">Next game ▶</button>';
-    }
-    if (d.phase === "stand" && d.stand.by === "you") return '<button class="act wide" data-act="skip">⏩ Skip to the buzzer<small>you\'re locked in — the bot keeps its thinking time</small></button>';
-    return '<button class="act" data-act="draw"' + (n < G.MAX_HAND ? "" : " disabled") + ">＋ Draw<small>" + (n < G.MAX_HAND ? "N → " + (n + 1) : "max 5") + "</small></button>" +
-      (d.phase === "stand" ? '<button class="act" data-act="submit">✓ Submit<small>answer now</small></button>' :
-        '<button class="act" data-act="stand">✋ Stand<small>lock my total</small></button>') +
-      '<button class="act call" data-act="call">Call 21<small>I have it!</small></button>';
-  }
-
-  /* ============================ pause / quit ============================ */
+  /* ============================ pause ============================ */
   function pause() {
-    if (!cur || cur.over || cur.kind === "practice" || (cur.kind === "duel" && cur.phase === "over")) return;
-    if (clock.paused) return;
+    if (!cur || clock.paused) return;
     clock.paused = true;
+    saveRun();
     var g = $("#g"); if (g) g.classList.add("paused");
-    overlay('<h2>Paused</h2><p class="note">The clock is stopped and the cards are hidden.</p>' +
-      '<div class="btns"><button class="btn" data-act="quit">Quit game</button><button class="btn gold" data-act="resume">Resume</button></div>');
+    overlay("<h2>Paused</h2><p class=\"note\">The clock is stopped and the question is hidden." +
+      (cur.kind === "daily" ? " Your progress is saved, so you can pick this round up later today." : "") + "</p>" +
+      '<div class="btns"><button class="btn" data-act="home">' + (cur.kind === "daily" ? "Save &amp; exit" : "Quit round") + '</button><button class="btn gold" data-act="resume">Resume</button></div>');
   }
   function resume() {
     closeOverlay();
     clock.paused = false;
     var g = $("#g"); if (g) g.classList.remove("paused");
   }
-  function endGame() { stopClock(); cur = null; closeOverlay(); fxLayer.innerHTML = ""; }
-  document.addEventListener("visibilitychange", function () { if (document.hidden) pause(); });
+  window.addEventListener("pagehide", function () { saveRun(); });
 
-  /* ============================ card zoom ============================ */
-  function zoom(id) {
-    var c = card(id);
-    if (!c) return;
-    var extra = "";
-    if (c.seq) {
-      var terms = G.seqPreview(c.seq, 60);
-      extra = '<p class="note">Value = ' + G.SEQ_INFO[c.seq] + ". If X is negative, count as if it were positive, then make the result negative.</p>" +
-        '<div class="seqt">' + terms.map(function (t, k) { return "<span><i>" + (k + 1) + "</i>" + t + "</span>"; }).join("") + "</div>";
-    } else {
-      extra = '<p class="note">' + esc(c.text) + "</p>";
+  /* ============================ results ============================ */
+  function verdictFor(r) {
+    if (r.kind === "extra") return '<span class="dim">Extra round: not saved to your history.</span>';
+    var score = scoreOf(r.answers), ms = timeOf(r.answers), lines = [];
+    // earlier daily rounds in this category at this difficulty
+    var prev = Object.keys(DAYS).filter(function (k) { return k < r.date && DAYS[k][r.cat] && DAYS[k][r.cat].diff === r.diff; }).sort()
+      .map(function (k) { return DAYS[k][r.cat]; });
+    var perfect = prev.filter(function (p) { return p.score === T.ROUND; }).map(function (p) { return p.ms; });
+    var best = perfect.length ? Math.min.apply(null, perfect) : null;
+    if (score === T.ROUND) {
+      lines.push(best === null ? '<span class="good">Perfect round!</span>' : ms < best ? '<span class="good">Perfect, and your fastest yet</span> <span class="dim">(was ' + fmtTime(best) + ")</span>" :
+        '<span class="good">Perfect round.</span> <span class="dim">Fastest: ' + fmtTime(best) + "</span>");
     }
-    overlay(G.cardHtml(c) + '<p class="note" style="margin-top:12px"><span class="ics">' + G.shapesHtml(c.level) + "</span>" +
-      " Level " + c.level + " · " + c.icons + " icon" + (c.icons > 1 ? "s" : "") + " · " + G.SETS[c.set] +
-      (c.origin === "published" ? " · published card" : " · fan-made") + "</p>" + extra +
-      '<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-act="close">Close</button></div>', "zoom", true);
+    var last = prev.slice(-7);
+    if (last.length >= 2) {
+      var avgS = last.reduce(function (s, p) { return s + p.score; }, 0) / last.length, avgT = last.reduce(function (s, p) { return s + p.ms; }, 0) / last.length, d = ms - avgT;
+      lines.push('<span class="dim">Your last ' + last.length + " rounds averaged " + avgS.toFixed(1) + "/" + T.ROUND + " in " + fmtTime(avgT) + ".</span> " +
+        (d < 0 ? '<span class="good">' + fmtSec(-d) + " faster</span>" : '<span class="warn">' + fmtSec(d) + " slower</span>"));
+    }
+    var st = T.streak(DAYS, today());
+    if (r.date === today() && st >= 2) lines.push("🔥 " + st + " days in a row");
+    return lines.join("<br>");
+  }
+  function reviewList(r) {
+    return '<ol class="rev">' + r.qs.map(function (q, k) {
+      var a = r.answers[k] || { v: null, ok: false, ms: 0 };
+      var said = a.ok ? '<span class="good">✓ ' + (q.label ? q.label + " = " : "") + sn(a.v) + "</span>" :
+        (a.v === null ? '<span class="dim">Skipped</span>' : 'You said <b class="bad">' + sn(a.v) + "</b>") + " · answer <b>" + answerText(q) + "</b>";
+      return '<li class="' + (a.ok ? "ok" : "no") + '"><div class="rh"><span>' + q.n + ". " + q.prompt + "</span><span>" + fmtSec(a.ms) + "</span></div>" +
+        '<div class="rq">' + q.html + '</div><div class="ra">' + said + '</div><div class="why">' + q.why + "</div></li>";
+    }).join("") + "</ol>";
+  }
+  function resultsScreen(r) {
+    screen = "results";
+    window.scrollTo(0, 0);
+    var score = scoreOf(r.answers), ms = timeOf(r.answers), other = r.cat === "mental" ? "linear" : "mental";
+    var nextBtn = r.kind === "daily" && !doneToday(other) ? '<button class="btn gold" data-act="play" data-arg="' + other + '">' + CAT_INFO[other].name + " ›</button>" :
+      '<button class="btn gold" data-act="extra">Extra round</button>';
+    app.innerHTML = '<div class="menu">' + topBar(CAT_INFO[r.cat].name + (r.kind === "extra" ? " · extra" : "")) +
+      '<p class="note" style="margin:-6px 0 14px">' + niceDate(r.date, true) + " · " + DIFF_INFO[r.diff].name + "</p>" +
+      lineHtml(r.answers, T.ROUND, true) +
+      '<div class="score"><div><b>' + score + '<span class="dim">/' + T.ROUND + "</span></b><small>correct</small></div><div><b>" + fmtTime(ms) + "</b><small>" +
+      fmtSec(ms / Math.max(1, r.answers.length)) + " per question</small></div></div>" +
+      '<div class="verdict">' + verdictFor(r) + "</div>" +
+      '<div class="btns"><button class="btn" data-act="home">Home</button>' + nextBtn + "</div>" +
+      (r.qs ? '<div class="sect" style="padding-bottom:4px"><h3>Review</h3>' + reviewList(r) + "</div>" :
+        '<p class="note">These questions came from an older version of the app, so they can\'t be shown again.</p>') + "</div>";
+  }
+  function play(cat) {
+    if (doneToday(cat)) return reviewToday(cat);
+    startRound(cat, "daily", savedRun(cat));
+  }
+  function reviewToday(cat) {
+    var t = today(), rec = DAYS[t][cat], qs = T.makeRound(cat, rec.diff, T.dailySeed(t, cat, rec.diff), CTX);
+    if (!Array.isArray(rec.a) || qs.some(function (q, k) { return !rec.a[k] || rec.a[k].c !== q.answer; })) qs = null;
+    endRound();
+    resultsScreen({ cat: cat, kind: "daily", date: t, diff: rec.diff, qs: qs, answers: rec.a || [] });
+  }
+  function extraMenu() {
+    overlay("<h2>Extra round</h2><p class=\"note\">Ten random questions at " + DIFF_INFO[S.diff].name.toLowerCase() +
+      " difficulty. Extra rounds don't go into your history or streak.</p>" +
+      '<div class="btns"><button class="btn gold" data-act="extrago" data-arg="mental">Mental maths</button><button class="btn gold" data-act="extrago" data-arg="linear">Linear algebra</button></div>' +
+      '<div class="btns one"><button class="btn" data-act="close">Cancel</button></div>', true);
   }
 
   /* ============================ menu screens ============================ */
-  function big(act, title, sub) { return '<button class="big" data-act="' + act + '"><b>' + title + "</b><small>" + sub + "</small></button>"; }
+  var screen = "home";
   function topBar(title) { return '<div class="top"><button class="ib" data-act="home" aria-label="Back">‹</button><h2>' + title + "</h2></div>"; }
+  function dayCard(cat) {
+    var rec = (DAYS[today()] || {})[cat], run = !rec && savedRun(cat), st, line;
+    if (rec) { st = '<span class="good">✓ ' + rec.score + "/" + T.ROUND + "</span> · " + fmtTime(rec.ms); line = lineHtml(rec.a || [], T.ROUND); }
+    else if (run) { st = '<span class="warn">Resume · ' + (run.answers.length + 1) + "/" + T.ROUND + "</span>"; line = lineHtml(run.answers, run.answers.length); }
+    else { st = '<span class="hl">Start ›</span>'; line = lineHtml([], -1); }
+    return '<button class="day' + (rec ? " done" : "") + '" data-act="play" data-arg="' + cat + '"><span class="dh"><b>' + CAT_INFO[cat].name +
+      '</b><span class="st">' + st + "</span></span><small>" + CAT_INFO[cat].blurb + "</small>" + line + "</button>";
+  }
   function homeScreen() {
-    var best = (BEST[soloKey()] || [])[0];
-    app.innerHTML = '<div class="menu"><div class="logo">21<i>X</i></div><div class="tag">Algebraic blackjack · practice trainer</div>' +
-      (LOAD_ERR ? '<div class="err">Card list error: ' + esc(LOAD_ERR) + "</div>" : "") +
-      big("solo", "Solo challenge", "Official single-player rules: race to 21 difficulty icons" + (best ? " · best " + fmtTime(best.ms) : "")) +
-      big("duel", "Duel vs bot", "Multiplayer rules: call 21, stand, beat the 60-second timer · " + G.botCfg(S.bot).label + " bot") +
-      big("practice", "Practice", "No clock · hints" + (S.live ? ", live totals" : "") + " and missed-solution tips") +
-      '<div class="row3"><button class="btn" data-act="rules">How to play</button><button class="btn" data-act="cards">Cards</button><button class="btn" data-act="settings">Settings</button></div>' +
-      '<div class="foot">Deck: ' + esc(deckLabel()) + " · " + deckList().length + " cards<br>Unofficial fan-made trainer. 21X is a card game by Naylor Games.</div></div>";
+    var t = today(), st = T.streak(DAYS, t);
+    app.innerHTML = '<div class="menu"><div class="hero"><span>' + niceDate(t, true) + "</span>" +
+      (st ? '<span class="chip" title="days in a row">🔥 ' + st + "</span>" : "") + "</div>" +
+      '<div class="logo">Train of <i>Thought</i></div><div class="tag">Ten questions a round, two rounds a day.</div>' +
+      (LOAD_ERR ? '<div class="err">Card list error: ' + esc(LOAD_ERR) + ". The 21X hands are switched off.</div>" : "") +
+      CATS.map(dayCard).join("") +
+      '<div class="row3"><button class="btn" data-act="extra">Extra round</button><button class="btn" data-act="history">History</button><button class="btn" data-act="settings">Settings</button></div>' +
+      '<div class="foot">' + DIFF_INFO[S.diff].name + ' difficulty · <a href="#" data-act="help">How it works</a><br>Your scores stay on this device.</div></div>';
+  }
+  function tile(big, small) { return '<div class="tile"><b>' + big + "</b><small>" + small + "</small></div>"; }
+  function historyScreen() {
+    var keys = Object.keys(DAYS).filter(function (k) { return T.played(DAYS[k]); }).sort().reverse(), perfect = 0;
+    keys.forEach(function (k) { CATS.forEach(function (c) { if (DAYS[k][c] && DAYS[k][c].score === T.ROUND) perfect++; }); });
+    function catStats(cat) {
+      var recs = keys.filter(function (k) { return DAYS[k][cat]; }).map(function (k) { return DAYS[k][cat]; });
+      if (!recs.length) return '<div class="sect"><h3>' + CAT_INFO[cat].name + '</h3><p class="note">No rounds yet.</p></div>';
+      var last = recs.slice(0, 7), mine = recs.filter(function (r) { return r.diff === S.diff && r.score === T.ROUND; });
+      var avgS = last.reduce(function (s, r) { return s + r.score; }, 0) / last.length, avgT = last.reduce(function (s, r) { return s + r.ms; }, 0) / last.length;
+      var best = mine.length ? Math.min.apply(null, mine.map(function (r) { return r.ms; })) : null;
+      return '<div class="sect"><h3>' + CAT_INFO[cat].name + '</h3><div class="tiles" style="margin:0">' +
+        tile(avgS.toFixed(1) + '<span class="dim" style="font-size:.6em">/' + T.ROUND + "</span>", last.length > 1 ? "average score, last " + last.length : "score") +
+        tile(fmtTime(avgT), last.length > 1 ? "average time, last " + last.length : "time") + tile(recs.length, recs.length === 1 ? "round" : "rounds") +
+        tile(best === null ? "—" : fmtTime(best), "fastest 10/10, " + DIFF_INFO[S.diff].name.toLowerCase()) + "</div></div>";
+    }
+    function cell(r) { return r ? '<span class="pill' + (r.score === T.ROUND ? " p10" : "") + '">' + r.score + "/" + T.ROUND + "</span> " + fmtTime(r.ms) : '<span class="dim">—</span>'; }
+    app.innerHTML = '<div class="menu">' + topBar("History") +
+      '<div class="tiles">' + tile("🔥 " + T.streak(DAYS, today()), "day streak") + tile(T.bestStreak(DAYS), "best streak") +
+      tile(keys.length, keys.length === 1 ? "day played" : "days played") + tile(perfect, "perfect rounds") + "</div>" +
+      CATS.map(catStats).join("") +
+      (keys.length ? '<div class="sect"><h3>Recent days</h3><table class="rec"><tr><th></th><th>Mental</th><th>Linear</th></tr>' +
+        keys.slice(0, 60).map(function (k) { return "<tr><td>" + niceDate(k) + "</td><td>" + cell(DAYS[k].mental) + "</td><td>" + cell(DAYS[k].linear) + "</td></tr>"; }).join("") +
+        "</table></div>" : '<p class="note">Finish a daily round and it will show up here.</p>') + "</div>";
+  }
+  function seg(act, opts, curv) {
+    return '<div class="seg">' + opts.map(function (o) {
+      return '<button data-act="' + act + '" data-arg="' + o[0] + '" class="' + (curv === o[0] ? "on" : "") + '">' + o[1] + "</button>";
+    }).join("") + "</div>";
   }
   function tog(key, title, sub) {
     return '<div class="sw"><span>' + title + (sub ? "<small>" + sub + "</small>" : "") + '</span><button class="tog' + (S[key] ? " on" : "") +
       '" data-act="set" data-arg="' + key + '" role="switch" aria-checked="' + !!S[key] + '" aria-label="' + esc(title) + '"></button></div>';
   }
-  function seg(act, opts, curv) {
-    return '<div class="seg">' + opts.map(function (o) {
-      return '<button data-act="' + act + '" data-arg="' + o[0] + '" class="' + (String(curv) === String(o[0]) ? "on" : "") + '">' + o[1] + "</button>";
-    }).join("") + "</div>";
-  }
-  var BOT_NOTE = {
-    easy: "Slow (about 15–25 s per decision, longer for hard hands), only tries X from −6 to 6, stands on 17 or more.",
-    medium: "About 8–14 s per decision, tries X from −15 to 15, stands on 18 or more.",
-    hard: "About 4–7 s per decision, tries X from −60 to 60, stands on 19 or more."
-  };
   function settingsScreen() {
-    var n = deckList().length;
+    var n = Object.keys(DAYS).filter(function (k) { return T.played(DAYS[k]); }).length;
     app.innerHTML = '<div class="menu">' + topBar("Settings") +
-      '<div class="sect"><h3>Deck</h3><div class="seg">' + [1, 2, 3].map(function (lv) {
-        return '<button data-act="lvl" data-arg="' + lv + '" class="' + (S.levels.indexOf(lv) >= 0 ? "on" : "") + '">Level ' + lv + "</button>";
-      }).join("") + "</div>" +
-      tog("celebrity", "Celebrity cards", "6 gold sequence cards: primes, triangle numbers, Fibonacci, sum of factors, digits of π and e") +
-      tog("limited", "V &amp; Y cards (fan-made)", "27 cards with Y (you choose it, always positive), V (1 + hands or games won) and factorials") +
-      '<p class="note">' + n + " cards in the deck" + (n < 10 ? ' — <b class="bad">need at least 10</b>' : "") + ". The official solo rules use all Core cards (levels 1–3).</p></div>" +
-      '<div class="sect"><h3>Solo: wrong-call penalty</h3>' + seg("pen", [[0, "None"], [5, "5 s"], [10, "10 s"], [30, "30 s"]], S.penalty) +
-      '<p class="note">The rulebook has no penalty: checking your maths is the cost. Here checking is instant, so a penalty stops you guessing your way to 21. Best times are kept separately for each setting.</p></div>' +
-      '<div class="sect"><h3>Duel: bot level</h3>' + seg("bot", [["easy", "Easy"], ["medium", "Medium"], ["hard", "Hard"]], S.bot) +
-      '<p class="note">' + BOT_NOTE[S.bot] + "</p></div>" +
-      '<div class="sect"><h3>Practice</h3>' + tog("live", "Live totals", "Show each card's value as you type X") +
-      tog("missed", "Missed-21 tips", "When you mulligan a hand that could make 21, show the X that worked (practice and solo)") + "</div>" +
-      '<div class="sect"><h3>Records</h3><button class="btn" data-act="resetrec">Clear best times</button></div></div>';
+      '<div class="sect"><h3>Difficulty</h3>' + seg("diff", [["gentle", "Gentle"], ["standard", "Standard"], ["spicy", "Spicy"]], S.diff) +
+      '<p class="note">' + DIFF_INFO[S.diff].note + " Each difficulty has its own daily questions, and fastest times are compared within a difficulty. A round you've already started keeps its difficulty.</p></div>" +
+      '<div class="sect"><h3>Feel</h3>' + tog("haptics", "Vibration", "A short buzz for right and wrong answers (Android only)") + "</div>" +
+      '<div class="sect"><h3>History</h3><p class="note">' + n + (n === 1 ? " day" : " days") + ' recorded on this device.</p><button class="btn" data-act="wipe">Clear history</button></div></div>';
   }
-  function cardsScreen() {
-    function group(label, list) {
-      if (!list.length) return "";
-      return '<div class="gal-l">' + label + " · " + list.length + '</div><div class="gal">' + list.map(function (c) {
-        return G.cardHtml(c, { cls: "zoomable" + (c.origin === "published" ? " pub" : ""), attrs: ' data-act="zoom" data-arg="' + c.i + '"' });
-      }).join("") + "</div>";
-    }
-    function pick(set, lv) { return CARDS.filter(function (c) { return c.set === set && (!lv || c.level === lv); }); }
-    var pub = CARDS.filter(function (c) { return c.origin === "published"; }).length;
-    app.innerHTML = '<div class="menu">' + topBar("Cards") +
-      '<p class="note">The official card list isn\'t published. <b>★</b> marks the ' + pub + " cards that appear in the rulebook or in published reviews; the rest are fan-made to the rulebook's level definitions. Tap a card to enlarge it. Edit <code>data/cards.csv</code> to match your own deck.</p>" +
-      group("Core · Level 1", pick("core", 1)) + group("Core · Level 2", pick("core", 2)) + group("Core · Level 3", pick("core", 3)) +
-      group("Celebrity", pick("celebrity")) + group("V &amp; Y · Level 1", pick("limited", 1)) + group("V &amp; Y · Level 2", pick("limited", 2)) +
-      group("V &amp; Y · Level 3", pick("limited", 3)) + "</div>";
+  function helpScreen() {
+    function li(a) { return "<ul>" + a.map(function (s) { return "<li>" + s + "</li>"; }).join("") + "</ul>"; }
+    app.innerHTML = '<div class="menu">' + topBar("How it works") +
+      '<div class="sect"><h3>Every day</h3><p>There are two daily rounds of ten questions: <b>Mental maths</b> and <b>Linear algebra</b>. ' +
+      "The questions start as warm-ups and get harder. Everyone gets the same questions on the same day, and a new set arrives at midnight.</p>" +
+      "<p>The clock only runs while a question is waiting for your answer. Your score is the number you get right, and your time is the total.</p></div>" +
+      '<div class="sect"><h3>Answering</h3>' + li([
+        "Every answer is a whole number. Use <b>±</b> for negatives.",
+        "A wrong answer or a skip shows the right answer and a worked solution. Read it, then tap <b>Next</b>. The clock is stopped while you read.",
+        "Pause any time with ❚❚. Locking your phone pauses too, and a daily round in progress is saved, so you can finish it later that day.",
+        "Keyboard: type digits, <kbd>−</kbd> for the sign, <kbd>⌫</kbd> to delete, <kbd>Enter</kbd> to submit or move on, <kbd>Esc</kbd> to pause."]) + "</div>" +
+      '<div class="sect"><h3>Mental maths</h3><p>Addition, subtraction, multiplication and division; percentages and fractions of amounts; squares, square roots and powers; ' +
+      "order of operations; remainders; averages; series; and multiplication shortcuts like ×25, ×11, ×99 and (50 − 3)(50 + 3).</p>" +
+      '<p class="note">The worked answers show the shortcut: round and adjust (47 + 38 = 47 + 40 − 2), split a factor (67 × 8 = 480 + 56), ' +
+      "square from a round number ((70 − 3)² = 4900 − 420 + 9), or use digit sums for remainders.</p></div>" +
+      '<div class="sect"><h3>Linear algebra</h3><p>Half equations, half vectors and matrices: linear equations, simultaneous equations (Cramer\'s rule), ' +
+      "slopes and linear functions, singular matrices, dot and cross products, linear combinations, determinants (2×2 and 3×3), matrix–vector and matrix products, " +
+      "trace, eigenvalues, inverses, vector lengths and determinant rules.</p>" +
+      "<p>Each round also has one <b>21X hand</b>, from the algebraic blackjack card game. Choose a whole number <i class=\"v\">X</i> (never 0) so the cards add up to exactly 21. " +
+      "<i class=\"v\">N</i> is the number of cards in the hand. Any <i class=\"v\">X</i> that makes 21 counts.</p></div>" +
+      '<div class="sect"><h3>Difficulty</h3>' + li(["Gentle: " + DIFF_INFO.gentle.note, "Standard: " + DIFF_INFO.standard.note, "Spicy: " + DIFF_INFO.spicy.note]) + "</div>" +
+      '<div class="sect"><h3>On the train</h3><p>Add the app to your home screen (iPhone: Share → Add to Home Screen; Android: ⋮ → Install app). ' +
+      "It then opens full screen and works with no signal. Your history is saved only on this device.</p>" +
+      '<p class="note">The 21X cards come from the fan-made 21X trainer this app grew out of. 21X is a card game by Naylor Games, and this project is not affiliated with them.</p></div></div>';
   }
-  function rulesScreen() {
-    var s1 = G.shapesHtml(1), s2 = G.shapesHtml(2), s3 = G.shapesHtml(3);
-    function ic(h) { return '<span class="ics">' + h + "</span>"; }
-    app.innerHTML = '<div class="menu">' + topBar("How to play") +
-      '<div class="sect"><h3>The goal</h3><p>Make your cards add up to <b>exactly 21</b>. Every card is an algebra expression, and you choose the value of <i class="mv">X</i>. Go over 21 and you\'re bust.</p></div>' +
-      '<div class="sect"><h3>The letters</h3><ul>' +
-      "<li><b>" + mv("N") + "</b> is the number of cards in your hand: 2 at the start, and at most 5.</li>" +
-      "<li><b>" + mv("X") + "</b> is a whole number you choose. It can be positive or negative but never 0. The same X applies to every card in your hand, and you can change it whenever you like until you call or stand.</li>" +
-      "<li><b>" + mv("Y") + "</b> (V &amp; Y cards) is a second number you choose. It follows the same rules as X, except it must be positive.</li>" +
-      "<li><b>" + mv("V") + "</b> (V &amp; Y cards) is 1 + the number of games you've won this session. In solo it's 1 + the number of hands in your score area.</li></ul></div>" +
-      '<div class="sect"><h3>Totals</h3><ul><li>X must be whole, but your total doesn\'t have to be: 12.5 is fine.</li>' +
-      "<li>Over 21 is <b>bust</b>. <b>Exactly 20 is bust too</b>. Most cards are even and hands start with N = 2, which would make 20 too easy.</li>" +
-      "<li>Order of operations (BIDMAS): brackets, indices, × ÷, then + −. So −X² means −(X²).</li></ul></div>" +
-      '<div class="sect"><h3>Difficulty icons</h3><ul>' +
-      "<li>" + ic(s1) + " <b>Level 1</b>: integers, negatives, +, −, ×.</li>" +
-      "<li>" + ic(s2) + " <b>Level 2</b>: division by 2, brackets, powers.</li>" +
-      "<li>" + ic(s3) + " <b>Level 3</b>: harder division and expressions, the Celebrity sequences and factorials.</li></ul>" +
-      "<p>A card's icon count is its level (1–3). Icons are what you score.</p></div>" +
-      '<div class="sect"><h3>Celebrity cards (gold border)</h3><p>Each one shows a sequence. Its value is the term X places along it: the Xth prime, the Xth triangle number, Fib(X), the sum of the factors of X, or the Xth digit of π or e after the point. If X is negative, count as if X were positive, then make the result negative. Tap a card in play to see more terms.</p></div>' +
-      '<div class="sect"><h3>Multiplayer rules (Duel)</h3><ul>' +
-      "<li>Everyone plays at the same time with cards face up. There are no turns.</li>" +
-      "<li><b>Draw</b> (twist): take the top card at any time, up to 5 cards. Each draw makes N bigger. You can't discard.</li>" +
-      "<li><b>Call 21</b>: state your X and show your sum. If you're right you win the game. If you're wrong you're out until the next game.</li>" +
-      "<li><b>Stand</b> (stick): lock in your total and X and start a <b>1-minute timer</b>. The others can keep drawing and calling 21, but nobody else can stand.</li>" +
-      "<li>When the timer ends, everyone states their best valid total. Anyone still hesitating is out. Closest to 21 wins, and <b>the player who stood wins ties</b>.</li>" +
-      "<li>The winner scores the difficulty icons on their cards. In the app, the first to 21 points wins the match.</li></ul></div>" +
-      '<div class="sect"><h3>Single-player rules (Solo)</h3><ul>' +
-      "<li>Goal: get <b>21 difficulty icons</b> into your score area as fast as you can. The rulebook uses all Core cards.</li>" +
-      "<li>Make exactly 21, and the hand goes to your score area. You then get 2 new cards.</li>" +
-      "<li><b>Mulligan</b> whenever you like: discard your whole hand and take 2 new cards.</li>" +
-      "<li>There's no standing in solo. When the deck runs out, the discards are shuffled into a new deck.</li></ul></div>" +
-      '<div class="sect"><h3>About this app</h3><ul>' +
-      "<li>Checking is instant here, so in Solo a wrong call adds a time penalty (Settings). The rulebook has none.</li>" +
-      "<li>The duel bot thinks for a while, depending on its level and how hard its hand looks, and only tries a limited range of X. Once you stand you're locked in, and you can skip ahead to the buzzer.</li>" +
-      "<li>The official card list isn't public. This deck includes every card shown in the rulebook and published reviews, plus fan-made cards built to the same level rules (see Cards).</li>" +
-      "<li>Optional harder variants from the rulebook, like non-integer X or more than 5 cards, aren't implemented.</li></ul>" +
-      '<p class="note">Unofficial fan project, not affiliated with Naylor Games. Buy the real game at naylorgames.com.</p></div></div>';
-  }
-  var SCREENS = { home: homeScreen, settings: settingsScreen, cards: cardsScreen, rules: rulesScreen };
-  function go(name) { endGame(); window.scrollTo(0, 0); SCREENS[name](); }
+  var SCREENS = { home: homeScreen, history: historyScreen, settings: settingsScreen, help: helpScreen };
+  function go(name) { endRound(); screen = name; window.scrollTo(0, 0); SCREENS[name](); }
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) pause();
+    else if (!cur && screen === "home") homeScreen();           // the date may have changed overnight
+  });
 
   /* ============================ input wiring ============================ */
   var ACTS = {
-    home: function () { go("home"); },
-    rules: function () { go("rules"); },
-    cards: function () { go("cards"); },
+    home: function () { if (cur) saveRun(); go("home"); },
+    history: function () { go("history"); },
     settings: function () { go("settings"); },
-    solo: function () { startSolo(false); },
-    practice: function () { startSolo(true); },
-    duel: function () { startDuel(); },
-    quit: function () { go("home"); },
+    help: function () { go("help"); },
+    play: play,
+    extra: extraMenu,
+    extrago: function (cat) { closeOverlay(); startRound(cat, "extra"); },
     pause: pause,
     resume: resume,
-    again: function () { var k = cur && cur.kind; closeOverlay(); if (k === "duel") startDuel(); else startSolo(k === "practice"); },
-    next: function () { if (cur && cur.kind === "duel" && cur.phase === "over" && !cur.matchOver) duelNewGame(); },
     key: pressKey,
-    step: function (d) { stepKey(+d); },
-    focus: function (f) { if (cur && inputOpen()) { inp.focus = f; renderInputs(); } },
-    call: function () { if (!cur || clock.paused) return; if (cur.kind === "duel") duelCall(); else soloCall(); },
-    draw: function () { if (!cur || clock.paused) return; if (cur.kind === "duel") duelDraw(); else soloDraw(); },
-    mulligan: function () { if (cur && cur.kind !== "duel" && !clock.paused) soloMulligan(); },
-    stand: function () { if (cur && cur.kind === "duel" && !clock.paused) duelStand(); },
-    submit: function () { if (cur && cur.kind === "duel" && cur.phase === "stand" && cur.stand.by === "bot") duelBuzzer(); },
-    skip: function () { if (cur && cur.kind === "duel") duelSkip(); },
-    hint: practiceHint,
-    zoom: function (id) { zoom(+id); },
+    go: submit,
+    skip: skip,
     close: closeOverlay,
-    lvl: function (lv) {
-      lv = +lv;
-      var i = S.levels.indexOf(lv);
-      if (i >= 0 && S.levels.length === 1) { toast("Keep at least one level"); return; }
-      if (i >= 0) S.levels.splice(i, 1); else S.levels.push(lv);
-      saveSettings(); settingsScreen();
-    },
+    diff: function (v) { if (T.RAMPS[v]) { S.diff = v; saveSettings(); settingsScreen(); } },
     set: function (k) { S[k] = !S[k]; saveSettings(); settingsScreen(); },
-    pen: function (v) { S.penalty = +v; saveSettings(); settingsScreen(); },
-    bot: function (v) { S.bot = v; saveSettings(); settingsScreen(); },
-    resetrec: function () {
-      overlay("<h2>Clear best times?</h2><p class=\"note\">This removes every saved solo time on this device.</p>" +
-        '<div class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn gold" data-act="resetyes">Clear</button></div>');
+    wipe: function () {
+      overlay("<h2>Clear history?</h2><p class=\"note\">This deletes every saved round, your streak and any round in progress on this device.</p>" +
+        '<div class="btns"><button class="btn" data-act="close">Cancel</button><button class="btn gold" data-act="wipeyes">Clear</button></div>');
     },
-    resetyes: function () { BEST = {}; save("best", BEST); closeOverlay(); toast("Best times cleared"); }
+    wipeyes: function () { DAYS = {}; saveDays(); CATS.forEach(function (c) { drop(runKey(c)); }); closeOverlay(); toast("History cleared"); settingsScreen(); }
   };
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-act]");
     if (!b || b.disabled) return;
+    e.preventDefault();
     var fn = ACTS[b.getAttribute("data-act")];
     if (fn) fn(b.getAttribute("data-arg"));
   });
   document.addEventListener("keydown", function (e) {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    var k = e.key, ov = $(".ov");
-    if (ov) { if (k === "Escape") { if (clock.paused) resume(); else if (!cur || !cur.over) closeOverlay(); e.preventDefault(); } return; }
+    var k = e.key;
+    if ($(".ov")) {
+      if (k === "Escape") { if (cur && clock.paused) resume(); else if (!cur) closeOverlay(); e.preventDefault(); }
+      return;
+    }
     if (!cur) return;
     if (/^[0-9]$/.test(k)) pressKey(k);
-    else if (k === "-" || k === "_") pressKey("neg");
+    else if (k === "-" || k === "_" || k === "−") pressKey("neg");
     else if (k === "Backspace") pressKey("back");
-    else if (k === "Enter") { if (cur.kind === "duel" && cur.phase === "over") ACTS.next(); else ACTS.call(); }
-    else if (k === "ArrowUp" || k === "+" || k === "=") stepKey(1);
-    else if (k === "ArrowDown") stepKey(-1);
-    else if (k === "d" || k === "D") ACTS.draw();
-    else if (k === "m" || k === "M") ACTS.mulligan();
-    else if (k === "s" || k === "S") ACTS.stand();
-    else if (k === "h" || k === "H") practiceHint();
-    else if (k === "y" || k === "Y" || k === "x" || k === "X") ACTS.focus(k.toLowerCase());
-    else if (k === "Escape") { if (cur.kind === "practice") go("home"); else pause(); }
+    else if (k === "Enter") submit();
+    else if (k === "Escape") pause();
     else return;
     e.preventDefault();
   });

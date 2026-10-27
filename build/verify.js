@@ -6,27 +6,28 @@ var csv = html.match(/<script type="text\/plain" id="cards-csv">([\s\S]*?)<\/scr
 if (!csv) throw new Error("missing embedded card list");
 var scripts = [], re = /<script>([\s\S]*?)<\/script>/g, m;
 while ((m = re.exec(html))) scripts.push(m[1]);
-if (scripts.length !== 2) throw new Error("expected 2 inline scripts, found " + scripts.length);
+if (scripts.length !== 3) throw new Error("expected 3 inline scripts, found " + scripts.length);
 
-// run the embedded lib exactly as the browser would (it attaches itself to window)
+// run the embedded engine and generators exactly as the browser would (they attach to window)
 var sandbox = { window: {} };
 vm.createContext(sandbox);
 vm.runInContext(scripts[0], sandbox);
-var G = sandbox.window.X21;
-new vm.Script(scripts[1]);                       // app.js must at least parse
+vm.runInContext(scripts[1], sandbox);
+var X21 = sandbox.window.X21, T = sandbox.window.TOT;
+new vm.Script(scripts[2]);                       // app.js must at least parse
 
-var cards = G.loadCards(csv[1]);
-var sets = {};
-cards.forEach(function (c) { var k = c.set + " L" + c.level; sets[k] = (sets[k] || 0) + 1; });
-var core = G.deckIds(cards, { levels: [1, 2, 3] });
-var g = new G.Solo(cards, core, { rng: G.mulberry32(5) });
-var rendered = cards.map(function (c) { return G.cardHtml(c); }).join("").length;
-var ex = G.evalHand(["6X", "2X+4", "X/2"].map(function (f) { return cards.filter(function (c) { return c.formula === f; })[0]; }), { X: 2, N: 3 });
-
+var cards = X21.loadCards(csv[1]), ctx = { cards: cards }, day = "2026-10-27", ok = cards.length === 54;
 console.log("EMBEDDED BUILD CHECK (from final HTML)");
-console.log(" cards: " + cards.length + " | " + Object.keys(sets).sort().map(function (k) { return k + "=" + sets[k]; }).join(", "));
-console.log(" core deck: " + core.length + " | solo deal: " + g.hand.length + " cards");
-console.log(" rulebook example 6X + 2X+4 + X/2 at X=2, N=3: " + G.qstr(ex.total));
-console.log(" rendered card HTML chars (no throw): " + rendered);
+console.log(" cards: " + cards.length);
+["mental", "linear"].forEach(function (cat) {
+  Object.keys(T.RAMPS).forEach(function (diff) {
+    var qs = T.makeRound(cat, diff, T.dailySeed(day, cat, diff), ctx);
+    var right = qs.filter(function (q) { return T.isRight(q, q.answer); }).length;
+    ok = ok && qs.length === 10 && right === 10;
+    console.log(" " + cat + "/" + diff + ": " + qs.length + " questions, " + right + " self-checked · " + qs.map(function (q) { return q.type; }).join(" "));
+  });
+});
+var hand = ["6X", "2X+4", "X/2"].map(function (f) { return cards.filter(function (c) { return c.formula === f; })[0]; });
+console.log(" rulebook hand 6X + 2X+4 + X/2 makes 21 at X = " + X21.solveX(hand, 30).join(", "));
 console.log(" html size: " + html.length.toLocaleString() + " chars");
-console.log(cards.length === 87 && core.length === 54 && ex.status === "win" ? "PASS" : "CHECK");
+console.log(ok && X21.solveX(hand, 30)[0] === 2 ? "PASS" : "CHECK");

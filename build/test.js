@@ -1,269 +1,352 @@
-// Unit tests for the pure game logic + deck statistics.   node build/test.js
+// Unit tests for the question generators and the 21X engine.   node build/test.js
+// Every generated answer is re-derived independently from the rendered question.
 var fs = require("fs");
 var path = require("path");
 var assert = require("assert");
-var G = require("./lib.js");
+var X21 = require("./cards.js");
+var T = require("./lib.js");
 
-var CARDS = G.loadCards(fs.readFileSync(path.join(__dirname, "..", "data", "cards.csv"), "utf8"));
-var byFormula = {};
-CARDS.forEach(function (c) { byFormula[c.formula] = c; });
-function card(f) { if (!byFormula[f]) throw new Error("no card " + f); return byFormula[f]; }
-function hand(list) { return list.map(card); }
-function total(list, env) { return G.qstr(G.evalHand(hand(list), env).total); }
+var CARDS = X21.loadCards(fs.readFileSync(path.join(__dirname, "..", "data", "cards.csv"), "utf8"));
+var CTX = { cards: CARDS };
+var M = X21.MINUS;
 
 var passed = 0;
 function test(name, fn) {
   try { fn(); passed++; }
   catch (e) { console.error("FAIL " + name + "\n  " + (e && e.stack || e)); process.exitCode = 1; }
 }
-var M = G.MINUS;
 
-/* ---------------- rationals & formatting ---------------- */
+/* ---------------- 21X engine ---------------- */
+function hand(list) {
+  return list.map(function (f) { var c = CARDS.filter(function (k) { return k.formula === f; })[0]; if (!c) throw new Error("no card " + f); return c; });
+}
 test("rationals", function () {
-  var h = G.Q(6, 4);
+  var h = X21.Q(6, 4);
   assert.strictEqual(h.n, 3n); assert.strictEqual(h.d, 2n);
-  assert.strictEqual(G.qstr(G.qadd(G.Q(1, 3), G.Q(1, 6))), "0.5");
-  assert.strictEqual(G.qstr(G.qpow(G.Q(2), G.Q(-3))), "0.125");
-  assert.strictEqual(G.qstr(G.Q(62, 3)), "20 2/3");
-  assert.strictEqual(G.qstr(G.Q(-7, 2)), M + "3.5");
-  assert.strictEqual(G.qstr(G.Q(2, 3)), "2/3");
-  assert.strictEqual(G.qdiv(G.Q(1), G.Q(0)), null);
-  assert.strictEqual(G.qpow(G.Q(0), G.Q(-1)), null);
-  assert.strictEqual(G.qpow(G.Q(-1), G.Q(1000001)).n, -1n);
-  assert.strictEqual(G.qpow(G.Q(3), G.Q(100000)), null, "absurdly large powers give up");
-  assert.ok(/mf/.test(G.qhtml(G.Q(62, 3))));
-});
-
-/* ---------------- celebrity sequences ---------------- */
-// independent digit generators to cross-check lib.js
-function piGauss(D) {             // pi = 48 atan(1/18) + 32 atan(1/57) - 20 atan(1/239)
-  var scale = 10n ** BigInt(D + 15);
-  function atanInv(x) {
-    x = BigInt(x);
-    var sum = 0n, pow = scale / x, k = 0n, x2 = x * x;
-    while (pow) { sum += (k % 2n ? -1n : 1n) * pow / (2n * k + 1n); pow /= x2; k++; }
-    return sum;
-  }
-  return (48n * atanInv(18) + 32n * atanInv(57) - 20n * atanInv(239)).toString().slice(1, D + 1);
-}
-function eSpigot(D) {             // Sale's spigot: e = 2 + 1/2(1 + 1/3(1 + 1/4(1 + ...)))
-  var n = D + 20, a = new Array(n).fill(1), out = "";
-  for (var k = 0; k < D; k++) {
-    var carry = 0;
-    for (var i = n - 1; i >= 0; i--) { var x = a[i] * 10 + carry; a[i] = x % (i + 2); carry = Math.floor(x / (i + 2)); }
-    out += carry;
-  }
-  return out;
-}
-test("sequences", function () {
-  assert.strictEqual(G.piDigits().slice(0, 50), "14159265358979323846264338327950288419716939937510");
-  assert.strictEqual(G.eDigits().slice(0, 50), "71828182845904523536028747135266249775724709369995");
-  assert.strictEqual(G.piDigits().length, 1000);
-  assert.strictEqual(G.piDigits(), piGauss(1000), "Machin vs Gauss arctan formula, all 1000 digits");
-  assert.strictEqual(G.eDigits(), eSpigot(1000), "series vs spigot, all 1000 digits");
-  assert.deepStrictEqual(G.seqPreview("prime", 10), ["2", "3", "5", "7", "11", "13", "17", "19", "23", "29"]);
-  assert.deepStrictEqual(G.seqPreview("tri", 6), ["1", "3", "6", "10", "15", "21"]);
-  assert.deepStrictEqual(G.seqPreview("fib", 8), ["1", "1", "2", "3", "5", "8", "13", "21"]);
-  assert.deepStrictEqual(G.seqPreview("sigma", 12), ["1", "3", "4", "7", "6", "12", "8", "15", "13", "18", "12", "28"]);
-  assert.strictEqual(G.seqTerm("prime", 1000), 7919n);
-  assert.strictEqual(G.seqTerm("prime", -3), -5n, "negative X: count as positive, then negate");
-  assert.strictEqual(G.seqTerm("pidigit", -2), -4n);
-  assert.strictEqual(G.seqTerm("fib", 0), null);
-  assert.strictEqual(G.seqTerm("pidigit", 1001), null, "off the card");
-});
-
-/* ---------------- parser / renderer ---------------- */
-test("every card parses and round-trips through its plain-text form", function () {
-  var rng = G.mulberry32(7);
-  CARDS.forEach(function (c) {
-    var again = G.parse(G.textOf(c.ast));
-    for (var k = 0; k < 25; k++) {
-      var env = { X: G.Q(Math.floor(rng() * 21) - 10 || 1), N: G.Q(2 + Math.floor(rng() * 4)), Y: G.Q(1 + Math.floor(rng() * 6)), V: G.Q(1 + Math.floor(rng() * 4)) };
-      var a = G.evalQ(c.ast, env), b = G.evalQ(again, env);
-      assert.strictEqual(a && G.qstr(a), b && G.qstr(b), c.id + " " + c.formula + " vs " + G.textOf(c.ast));
-      var f = c.f({ X: G.qnum(env.X), N: G.qnum(env.N), Y: G.qnum(env.Y), V: G.qnum(env.V) });
-      if (a) assert.ok(Math.abs(f - G.qnum(a)) <= 1e-9 * Math.max(1, Math.abs(f)), c.formula + " float " + f + " vs " + G.qstr(a));
-      else assert.ok(f !== f, c.formula + " should be undefined");
-    }
-    assert.ok(c.r.h && c.r.w > 0, c.formula + " renders");
-  });
+  assert.strictEqual(X21.qstr(X21.qadd(X21.Q(1, 3), X21.Q(1, 6))), "0.5");
+  assert.strictEqual(X21.qstr(X21.qpow(X21.Q(2), X21.Q(-3))), "0.125");
+  assert.strictEqual(X21.qstr(X21.Q(62, 3)), "20 2/3");
+  assert.strictEqual(X21.qstr(X21.Q(-7, 2)), M + "3.5");
+  assert.strictEqual(X21.qdiv(X21.Q(1), X21.Q(0)), null);
+  assert.ok(/mf/.test(X21.qhtml(X21.Q(62, 3))));
 });
 test("parser precedence", function () {
-  function v(src, x, n) { return G.qstr(G.evalQ(G.parse(src), { X: G.Q(x), N: G.Q(n || 2), Y: G.Q(1), V: G.Q(1) })); }
-  assert.strictEqual(v("-X^2", 3), M + "9");
-  assert.strictEqual(v("2^-X", 2), "0.25");
-  assert.strictEqual(v("4N/X", 3, 3), "4");
-  assert.strictEqual(v("36/(NX)", 2, 3), "6");
-  assert.strictEqual(v("1+X(N-2)", 5, 4), "11");
-  assert.strictEqual(v("(N-1)!", 1, 5), "24");
-  assert.strictEqual(v("2X²", 3), "18");
-  assert.strictEqual(v("N+X/N", 3, 3), "4");
-  assert.strictEqual(v("3 × 4 − 2", 1), "10");
-  assert.throws(function () { G.parse("2Z"); });
-  assert.throws(function () { G.parse("(X+1"); });
-  assert.throws(function () { G.parse(""); });
+  function val(src, x, n) { return X21.qstr(X21.evalQ(X21.parse(src), { X: X21.Q(x), N: X21.Q(n || 2) })); }
+  assert.strictEqual(val("-X^2", 3), M + "9");
+  assert.strictEqual(val("2^-X", 2), "0.25");
+  assert.strictEqual(val("4N/X", 3, 3), "4");
+  assert.strictEqual(val("36/(NX)", 2, 3), "6");
+  assert.strictEqual(val("1+X(N-2)", 5, 4), "11");
+  assert.strictEqual(val("2X²", 3), "18");
+  assert.strictEqual(val("3 × 4 − 2", 1), "10");
+  assert.throws(function () { X21.parse("2Z"); });
+  assert.throws(function () { X21.parse("(X+1"); });
+  assert.throws(function () { X21.parse("prime(X)"); });
 });
-test("text forms", function () {
-  assert.strictEqual(G.textOf(G.parse("4X/N")), "4X/N");
-  assert.strictEqual(G.textOf(G.parse("-12/X")), M + "12/X");
-  assert.strictEqual(G.textOf(G.parse("(X-N)^2")), "(X " + M + " N)²");
-  assert.strictEqual(G.textOf(G.parse("X(N+2)")), "X(N + 2)");
-  assert.ok(!/·/.test(G.render(G.parse("2X+4")).h), "2X is juxtaposed");
-  assert.ok(/·/.test(G.render(G.parse("3*2^N")).h), "3·2ᴺ needs a dot");
-});
-
-/* ---------------- published examples ---------------- */
-test("rulebook example: 6X, 2X+4, X/2", function () {
-  var h = ["6X", "2X+4", "X/2"];
-  assert.strictEqual(total(h, { X: 4, N: 3 }), "38");
-  assert.strictEqual(total(h, { X: 1, N: 3 }), "12.5");
-  assert.strictEqual(total(h, { X: 2, N: 3 }), "21");
-  var an = G.analyze(hand(h), { V: 1 });
-  assert.deepStrictEqual(an.solutions.map(function (s) { return s.x; }), [2]);
-  assert.strictEqual(G.qstr(an.best.total), "21");
-});
-test("review examples", function () {
-  assert.strictEqual(total(["3X", "4X"], { X: 3, N: 2 }), "21");
-  [1, -5, 9].forEach(function (x) { assert.strictEqual(total(["2-2X", "10", "2X+4"], { X: x, N: 3 }), "16"); });
-  assert.strictEqual(total(["X(N+2)", "2X+4"], { X: 2, N: 2 }), "16");
-  assert.strictEqual(total(["X(N+2)", "2X+4"], { X: 3, N: 2 }), "22");
-});
-test("20 is bust, over 21 is bust", function () {
-  assert.strictEqual(G.classify(G.Q(20)), "twenty");
-  assert.strictEqual(G.classify(G.Q(21)), "win");
-  assert.strictEqual(G.classify(G.Q(43, 2)), "bust");
-  assert.strictEqual(G.classify(G.Q(41, 2)), "ok");
-  assert.strictEqual(G.classify(null), "undef");
-  // 4 + 10 + 3N with N = 3 is 23 for every X: no valid total at all
-  var an = G.analyze(hand(["4", "10", "3N"]), { V: 1 });
-  assert.strictEqual(an.best, null);
-  // 10 + 5N (N = 2) is exactly 20: bust, so no valid total either
-  assert.strictEqual(G.analyze(hand(["10", "5N"]), { V: 1 }).best, null);
-});
-test("best valid total skips exactly 20", function () {
-  // 2X + 4 + 2X + 2N (N=2): 4X + 8 -> X=3 gives 20 (bust), X=2 gives 16
-  var an = G.analyze(hand(["2X+4", "2X+2N"]), { V: 1 });
-  assert.strictEqual(an.solutions.length, 0);
-  assert.strictEqual(G.qstr(an.best.total), "16");
-});
-test("Y and V cards", function () {
-  var an = G.analyze(hand(["XY", "Y"]), { V: 1 });                  // XY + Y = 21 -> Y(X+1) = 21
-  assert.ok(an.needsY && an.solutions.length > 0);
-  an.solutions.forEach(function (s) { assert.ok(s.y > 0); assert.strictEqual(s.y * (s.x + 1), 21); });
-  assert.strictEqual(total(["V!", "3V"], { X: 1, N: 2, V: 3 }), "15");
-  assert.strictEqual(G.evalHand(hand(["Y"]), { X: 1, N: 1 }).status, "undef", "Y must be chosen");
-});
-test("celebrity cards in a hand", function () {
-  // Xth prime + Xth triangle number: X = 4 -> 7 + 10 = 17; X = -4 -> -17
-  assert.strictEqual(total(["prime(X)", "tri(X)"], { X: 4, N: 2 }), "17");
-  assert.strictEqual(total(["prime(X)", "tri(X)"], { X: -4, N: 2 }), M + "17");
-  var an = G.analyze(hand(["fib(X)", "sigma(X)"]), { V: 1 });       // fib(6)+sigma(6) = 8+12 = 20 (bust); find 21s
-  an.solutions.forEach(function (s) { assert.strictEqual(total(["fib(X)", "sigma(X)"], { X: s.x, N: 2 }), "21"); });
-});
-
-/* ---------------- solo game ---------------- */
-function autoplaySolo(ids, seed, opts) {
-  var g = new G.Solo(CARDS, ids, Object.assign({ rng: G.mulberry32(seed) }, opts || {}));
-  for (var turn = 0; turn < 5000 && !g.done; turn++) {
-    var an = G.analyze(g.handCards(), { V: g.V() });
-    if (an.solutions.length) { var r = g.call(an.solutions[0].x, an.solutions[0].y); assert.ok(r.ok, "solver solution must score"); }
-    else if (g.canDraw()) g.draw();
-    else g.mulligan();
-  }
-  return g;
-}
-test("solo: official rules finish at 21+ icons", function () {
-  var ids = G.deckIds(CARDS, { levels: [1, 2, 3], celebrity: false, limited: false });
-  assert.strictEqual(ids.length, 54);
-  var g = autoplaySolo(ids, 1);
-  assert.ok(g.done && g.icons >= 21, "icons " + g.icons);
-  var scoredIcons = g.scored.reduce(function (s, h) { return s + h.icons; }, 0);
-  assert.strictEqual(scoredIcons, g.icons);
-  g.scored.forEach(function (h, k) { assert.strictEqual(h.V, k + 1, "V = 1 + hands in score area"); });
-  var seen = g.hand.length + g.deck.pile.length + g.deck.discard.length + g.outOfPlay.length;
-  assert.strictEqual(seen, 54, "no card lost or duplicated");
-});
-test("solo: wrong call keeps the hand, mulligan redeals 2", function () {
-  var ids = G.deckIds(CARDS, { levels: [1, 2, 3] });
-  var g = new G.Solo(CARDS, ids, { rng: G.mulberry32(3) });
-  var before = g.hand.slice();
-  var an = G.analyze(g.handCards(), { V: 1 }), x = 1;
-  while (an.solutions.some(function (s) { return s.x === x; })) x++;
-  var r = g.call(x, 1);
-  assert.ok(!r.ok); assert.deepStrictEqual(g.hand, before); assert.strictEqual(g.stats.wrong, 1);
-  g.draw(); g.draw(); g.draw(); assert.strictEqual(g.hand.length, 5); assert.strictEqual(g.draw(), null, "max 5 cards");
-  g.mulligan(); assert.strictEqual(g.hand.length, 2);
-});
-test("solo: tiny decks recycle scored cards instead of stalling", function () {
-  var ids = G.deckIds(CARDS, { levels: [1] });
-  assert.strictEqual(ids.length, 18);                              // only 18 icons on offer
-  var g = autoplaySolo(ids, 11);
-  assert.ok(g.done && g.icons >= 21, "level-1-only game still reaches 21 icons");
-});
-
-/* ---------------- duel bot ---------------- */
-test("bot calls a reachable 21, stands on a good total, draws on a poor one", function () {
-  var call = G.botDecide(hand(["3X", "4X"]), { V: 1 }, "medium", null);
-  assert.strictEqual(call.act, "call"); assert.strictEqual(call.x, 3);
-  var stand = G.botDecide(hand(["10", "4X"]), { V: 1 }, "medium", null);   // best 18 at X=2 (X=3 -> 22)
-  assert.strictEqual(stand.act, "stand"); assert.strictEqual(G.qstr(stand.total), "18");
-  var draw = G.botDecide(hand(["10", "4X"]), { V: 1 }, "hard", null);       // hard wants 19+
-  assert.strictEqual(draw.act, "draw");
-  var hold = G.botDecide(hand(["10", "4X"]), { V: 1 }, "medium", { total: G.Q(17) });
-  assert.strictEqual(hold.act, "hold");
-  var chase = G.botDecide(hand(["10", "4X"]), { V: 1 }, "medium", { total: G.Q(19) });
-  assert.strictEqual(chase.act, "draw");
-});
-test("bot timeline respects the 60 s budget", function () {
-  var ids = G.deckIds(CARDS, { levels: [1, 2, 3] });
-  for (var seed = 1; seed <= 30; seed++) {
-    var rng = G.mulberry32(seed), deck = new G.Deck(ids, rng);
-    var h = [deck.draw(), deck.draw()];
-    var ev = G.botTimeline(CARDS, h, function () { return deck.draw(); }, { V: 1 }, "hard", G.Q(19), G.STAND_MS, rng);
-    ev.forEach(function (e) { assert.ok(e.t <= G.STAND_MS); });
-    var last = ev[ev.length - 1];
-    if (last && last.act === "hold") assert.ok(G.qcmp(last.total, G.Q(19)) > 0);
-  }
-});
-
-/* ---------------- deck statistics (informational) ---------------- */
-function stats(label, cfg) {
-  var ids = G.deckIds(CARDS, cfg), rng = G.mulberry32(99), trials = 1500;
-  var solved2 = 0, solvedAny = 0, cardsUsed = 0, sumAbsX = 0, nSol = 0, dist = {};
-  for (var t = 0; t < trials; t++) {
-    var deck = new G.Deck(ids, rng), h = [deck.draw(), deck.draw()];
-    for (;;) {
-      var hc = h.map(function (i) { return CARDS[i]; });
-      var an = G.analyze(hc, { V: 1 }, { xMax: 200, yMax: 20 });
-      if (an.solutions.length) {
-        if (h.length === 2) solved2++;
-        solvedAny++; cardsUsed += h.length; dist[h.length] = (dist[h.length] || 0) + 1;
-        sumAbsX += Math.abs(an.solutions[0].x); nSol++;
-        break;
-      }
-      if (h.length >= 5) break;
-      h.push(deck.draw());
+test("all 54 core cards parse and round-trip through their text form", function () {
+  assert.strictEqual(CARDS.length, 54);
+  CARDS.forEach(function (c) {
+    var again = X21.parse(X21.textOf(c.ast));
+    for (var x = -6; x <= 6; x++) for (var n = 2; n <= 3; n++) {
+      var env = { X: X21.Q(x), N: X21.Q(n) }, a = X21.evalQ(c.ast, env), b = X21.evalQ(again, env);
+      assert.strictEqual(a && X21.qstr(a), b && X21.qstr(b), c.formula);
     }
-  }
-  var pct = function (n) { return (100 * n / trials).toFixed(0) + "%"; };
-  console.log("  " + label + " (" + ids.length + " cards): 2-card 21s " + pct(solved2) +
-    " | solvable by drawing to <=5 " + pct(solvedAny) +
-    " | solved at N=2/3/4/5: " + [2, 3, 4, 5].map(function (n) { return pct(dist[n] || 0); }).join("/") +
-    " | mean |X| " + (sumAbsX / Math.max(1, nSol)).toFixed(1));
+    assert.ok(c.r.h && c.r.w > 0 && /class="card/.test(X21.cardHtml(c)));
+  });
+});
+test("rulebook example 6X + (2X + 4) + X/2", function () {
+  var h = hand(["6X", "2X+4", "X/2"]);
+  assert.strictEqual(X21.qstr(X21.evalHand(h, 4).total), "38");
+  assert.strictEqual(X21.qstr(X21.evalHand(h, 1).total), "12.5");
+  assert.deepStrictEqual(X21.solveX(h, 30), [2]);
+  assert.ok(X21.makes21(h, 2) && !X21.makes21(h, 0) && !X21.makes21(h, 2.5));
+  var lf = X21.linearForm(h);
+  assert.strictEqual(X21.qstr(lf.a), "8.5"); assert.strictEqual(X21.qstr(lf.b), "4");
+  assert.strictEqual(X21.linearForm(hand(["X^2", "4"])), null, "X² is not linear");
+  assert.strictEqual(X21.linearForm(hand(["24/X", "4"])), null, "24/X is not linear");
+  assert.deepStrictEqual(X21.solveX(hand(["X^2", "N^2"]), 30), [], "X² + 4 = 21 has no whole X");
+  assert.deepStrictEqual(X21.solveX(hand(["X^2", "5N"]), 30), [], "X² + 10 = 21: none");
+  assert.deepStrictEqual(X21.solveX(hand(["X^2", "N-1"]), 30), [], "X² + 1: none");
+  assert.deepStrictEqual(X21.solveX(hand(["X^2", "4", "N-1"]), 30), [], "X² + 6: none");
+  assert.deepStrictEqual(X21.solveX(hand(["X^2", "N/2"]), 30), [], "X² + 1: none");
+  assert.deepStrictEqual(X21.solveX(hand(["X^2", "-5", "10"]), 30), [4, -4], "X² + 5 = 21: both signs, positive first");
+});
+
+/* ---------------- independent answer checks ---------------- */
+// rendered question HTML -> plain text that JS can evaluate
+function plain(h) {
+  return String(h)
+    .replace(/<span class="fr"><span class="fr-n">(.*?)<\/span><span class="fr-d">(.*?)<\/span><\/span>/g, "(($1)/($2))")
+    .replace(/<sup[^>]*>(.*?)<\/sup>/g, "^($1)").replace(/<sub>(.*?)<\/sub>/g, "_$1")
+    .replace(/<[^>]+>/g, "").replace(/&amp;/g, "&")
+    .replace(/−/g, "-").replace(/×/g, "*").replace(/÷/g, "/").replace(/·/g, "*");
 }
+function calc(expr, vars) {
+  var src = expr.replace(/\^/g, "**").replace(/(\d)\s*([a-zA-Z(])/g, "$1*$2").replace(/\)\s*\(/g, ")*(");
+  if (!/^[0-9+\-*/(). xyk]*$/.test(src)) throw new Error("not arithmetic: " + expr);
+  vars = vars || {};
+  return Function("x", "y", "k", "return " + src)(vars.x, vars.y, vars.k);
+}
+function cells(h) {                           // every numeric / symbolic matrix cell, in reading order
+  var out = [], mats = String(h).split(/<span class="mat/).slice(1);
+  mats.forEach(function (chunk) {
+    var body = chunk.slice(chunk.indexOf(">") + 1), depth = 0, cur = "", i = 0;
+    // walk the direct <span> children of this matrix
+    while (i < body.length) {
+      if (body.startsWith("<span", i)) { if (depth === 0) cur = ""; else cur += body.slice(i, body.indexOf(">", i) + 1); depth++; i = body.indexOf(">", i) + 1; continue; }
+      if (body.startsWith("</span>", i)) { depth--; if (depth === 0) out.push(plain(cur).trim()); else if (depth < 0) break; else cur += "</span>"; i += 7; continue; }
+      cur += body[i]; i++;
+    }
+  });
+  return out;
+}
+function nums(h) { return cells(h).map(Number); }
+function det2(a) { return a[0] * a[3] - a[1] * a[2]; }
+function sarrus(m) {
+  return m[0] * m[4] * m[8] + m[1] * m[5] * m[6] + m[2] * m[3] * m[7] - m[2] * m[4] * m[6] - m[0] * m[5] * m[7] - m[1] * m[3] * m[8];
+}
+function idx(label) { var mm = plain(label).match(/entry \(?(\d)(?:, (\d))?/); return mm ? [+mm[1] - 1, mm[2] ? +mm[2] - 1 : null] : null; }
+function matDet(A) {                          // float determinant by elimination
+  var n = A.length, a = A.map(function (r) { return r.slice(); }), d = 1;
+  for (var i = 0; i < n; i++) {
+    var p = i; while (p < n && Math.abs(a[p][i]) < 1e-12) p++;
+    if (p === n) return 0;
+    if (p !== i) { var t = a[p]; a[p] = a[i]; a[i] = t; d = -d; }
+    d *= a[i][i];
+    for (var r = i + 1; r < n; r++) { var f = a[r][i] / a[i][i]; for (var c = i; c < n; c++) a[r][c] -= f * a[i][c]; }
+  }
+  return d;
+}
+function matMul(A, B) { return A.map(function (r) { return B[0].map(function (_, j) { return r.reduce(function (s, x, k) { return s + x * B[k][j]; }, 0); }); }); }
+function diag(n, d) { var A = []; for (var i = 0; i < n; i++) { A.push([]); for (var j = 0; j < n; j++) A[i].push(i === j ? (i === 0 ? d : 1) : 0); } return A; }
+
+var CHECK = {
+  // mental maths: evaluate the expression (or the words) as written
+  add: function (q) { return calc(plain(q.html)); },
+  sub: function (q) { return calc(plain(q.html)); },
+  mul: function (q) { return calc(plain(q.html)); },
+  div: function (q) { return calc(plain(q.html)); },
+  ops: function (q) { return calc(plain(q.html)); },
+  near: function (q) { return calc(plain(q.html)); },
+  neg: function (q) { return calc(plain(q.html)); },
+  sq: function (q) { return calc(plain(q.html)); },
+  pow: function (q) { return calc(plain(q.html)); },
+  sqrt: function (q) { return Math.sqrt(+plain(q.html).replace("√", "")); },
+  pct: function (q) {
+    var p = plain(q.html), mm = p.match(/^(\d+)% of (\d+)$/);
+    if (mm) return mm[1] * mm[2] / 100;
+    mm = p.match(/^(\d+) (increased|decreased) by (\d+)%$/);
+    return +mm[1] * (1 + (mm[2] === "increased" ? 1 : -1) * mm[3] / 100);
+  },
+  frac: function (q) { var mm = plain(q.html).match(/^\(\((\d+)\)\/\((\d+)\)\) of (\d+)$/); return mm[1] * mm[3] / mm[2]; },
+  series: function (q) {
+    var p = plain(q.html).replace(/\s/g, ""), mm = p.match(/^(\d+)\+(\d+)\+(\d+)\+⋯\+(\d+)$/), s = 0;
+    for (var k = +mm[1]; k <= +mm[4]; k += mm[2] - mm[1]) s += k;
+    return s;
+  },
+  mod: function (q) { var mm = plain(q.html).match(/^(\d+)\/(\d+)$/); return mm[1] % mm[2]; },
+  mean: function (q) { var vs = plain(q.html).replace("mean of ", "").split(", ").map(Number); return vs.reduce(function (s, x) { return s + x; }, 0) / vs.length; },
+  half: function (q) { var p = plain(q.html), mm = p.match(/(\d+)$/); return /double/.test(p) ? 2 * mm[1] : mm[1] / 2; },
+
+  // linear algebra
+  lin1: solveLinear, lin2: solveLinear,
+  sys: function (q) {
+    var parts = q.html.split("</span><span>").map(plain);               // the two equations
+    var E = parts.map(function (s) { var lr = s.split("="); return function (x, y) { return calc(lr[0], { x: x, y: y }) - calc(lr[1], { x: x, y: y }); }; });
+    var c = E.map(function (e) { var z = e(0, 0); return [e(1, 0) - z, e(0, 1) - z, -z]; });
+    var D = c[0][0] * c[1][1] - c[0][1] * c[1][0];
+    assert.ok(D !== 0, "singular system");
+    var x = (c[0][2] * c[1][1] - c[0][1] * c[1][2]) / D, y = (c[0][0] * c[1][2] - c[0][2] * c[1][0]) / D;
+    return /y/.test(plain(q.label)) ? y : x;
+  },
+  line: function (q) {
+    var p = plain(q.html), pts = p.match(/\((-?\d+), (-?\d+)\)and\((-?\d+), (-?\d+)\)/);
+    if (pts) return (pts[4] - pts[2]) / (pts[3] - pts[1]);
+    var f = p.match(/f\((-?\d+)\)=(-?\d+)f\((-?\d+)\)=(-?\d+)/), s = +plain(q.label).match(/f\((-?\d+)\)/)[1];
+    var m = (f[4] - f[2]) / (f[3] - f[1]);
+    return +f[2] + m * (s - f[1]);
+  },
+  sing: function (q) {
+    var c = cells(q.html), K = q.answer;
+    function D(k) { var v = c.map(function (s) { return calc(s, { k: k }); }); return det2(v); }
+    assert.strictEqual(D(K), 0, "det at the answer");
+    if (c.filter(function (s) { return /k/.test(s); }).length === 1) { assert.notStrictEqual(D(K + 1), 0, "unique k"); return K; }
+    // quadratic in k: the answer must be the only positive root
+    var g = D(0), other = g / K;
+    assert.ok(K > 0 && other <= 0 && D(other) === 0, "positive root " + K + ", other " + other);
+    return K;
+  },
+  x21: function (q) {
+    var sols = X21.solveX(q.cards, 60);
+    assert.ok(sols.indexOf(q.answer) >= 0 && sols.length <= 2, "21X solutions " + sols);
+    for (var x = -60; x <= 60; x++) assert.strictEqual(T.isRight(q, x), sols.indexOf(x) >= 0, "X = " + x + " accepted iff it makes 21");
+    assert.strictEqual(q.cards.length, q.tier === 2 ? 2 : 3);
+    return q.answer;
+  },
+  dot: function (q) { var c = nums(q.html), n = c.length / 2, s = 0; for (var i = 0; i < n; i++) s += c[i] * c[n + i]; return s; },
+  comb: function (q) {
+    var c = nums(q.html), n = c.length / 2, mm = plain(q.label).match(/^\((-?\d*)u ?([+-]) ?(\d*)v\)_(\d)$/);
+    var al = mm[1] === "" ? 1 : mm[1] === "-" ? -1 : +mm[1], be = (mm[2] === "-" ? -1 : 1) * (mm[3] === "" ? 1 : +mm[3]), i = mm[4] - 1;
+    return al * c[i] + be * c[n + i];
+  },
+  det2: function (q) { return det2(nums(q.html)); },
+  det3: function (q) { return sarrus(nums(q.html)); },
+  matvec: function (q) {
+    var c = nums(q.html), n = c.length === 6 ? 2 : 3, i = idx(q.label)[0], s = 0;
+    for (var k = 0; k < n; k++) s += c[i * n + k] * c[n * n + k];
+    return s;
+  },
+  matmul: function (q) {
+    var c = nums(q.html), n = c.length === 8 ? 2 : 3, ij = idx(q.label), s = 0;
+    for (var k = 0; k < n; k++) s += c[ij[0] * n + k] * c[n * n + k * n + ij[1]];
+    return s;
+  },
+  trace: function (q) {
+    var c = nums(q.html);
+    if (c.length === 4) { var A = [[c[0], c[1]], [c[2], c[3]]], A2 = matMul(A, A); return A2[0][0] + A2[1][1]; }
+    var P = matMul([[c[0], c[1]], [c[2], c[3]]], [[c[4], c[5]], [c[6], c[7]]]);
+    return P[0][0] + P[1][1];
+  },
+  eig: function (q) {
+    var c = nums(q.html), tr = c[0] + c[3], dt = det2(c), disc = tr * tr - 4 * dt, r = Math.sqrt(disc);
+    assert.ok(Number.isInteger(r) && r > 0, "distinct whole eigenvalues");
+    return /Larger/.test(q.prompt) ? (tr + r) / 2 : (tr - r) / 2;
+  },
+  inv: function (q) {
+    var c = nums(q.html), d = det2(c), ij = idx(q.label);
+    assert.ok(Math.abs(d) === 1, "det ±1");
+    return [[c[3] / d, -c[1] / d], [-c[2] / d, c[0] / d]][ij[0]][ij[1]];
+  },
+  norm: function (q) { return Math.sqrt(nums(q.html).reduce(function (s, x) { return s + x * x; }, 0)); },
+  cross: function (q) {
+    var c = nums(q.html), u = c.slice(0, 3), v = c.slice(3), k = idx(q.label)[0];
+    return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]][k];
+  },
+  detprop: function (q) {
+    // build real matrices with those determinants and multiply them out
+    var p = plain(q.html), n = +p.match(/(\d) \* \d/)[1];
+    var dA = +p.match(/det A=(-?\d+)/)[1], mB = p.match(/det B=(-?\d+)/), dB = mB ? +mB[1] : 1;
+    var A = diag(n, dA), B = diag(n, dB), lab = plain(q.label).replace(/^det\((.*)\)$/, "$1");
+    var mm = lab.match(/^(-?\d*)(.*)$/), k = mm[1] === "" ? 1 : mm[1] === "-" ? -1 : +mm[1], rest = mm[2];
+    var P = diag(n, 1), re = /([AB])(\^\((T|-1|2)\))?/g, f;
+    A[n - 1][0] = 3;                           // not diagonal, so the transpose really differs
+    while ((f = re.exec(rest))) {
+      var X = f[1] === "A" ? A : B, e = f[3];
+      if (e === "T") X = X[0].map(function (_, j) { return X.map(function (r) { return r[j]; }); });
+      if (e === "2") X = matMul(X, X);
+      if (e === "-1") X = inverse(X);
+      P = matMul(P, X);
+    }
+    return Math.round(matDet(P.map(function (r) { return r.map(function (x) { return k * x; }); })) * 1e6) / 1e6;
+  }
+};
+function inverse(A) {                         // Gauss-Jordan, floats
+  var n = A.length, a = A.map(function (r, i) { return r.concat(diag(n, 1)[i]); });
+  for (var i = 0; i < n; i++) {
+    var p = i; while (Math.abs(a[p][i]) < 1e-12) p++;
+    var t = a[p]; a[p] = a[i]; a[i] = t;
+    var d = a[i][i]; a[i] = a[i].map(function (x) { return x / d; });
+    for (var r = 0; r < n; r++) if (r !== i) { var f = a[r][i]; a[r] = a[r].map(function (x, c) { return x - f * a[i][c]; }); }
+  }
+  return a.map(function (r) { return r.slice(n); });
+}
+function solveLinear(q) {
+  var lr = plain(q.html).split("=");
+  function f(x) { return calc(lr[0], { x: x }) - calc(lr[1], { x: x }); }
+  assert.ok(Math.abs(f(q.answer)) < 1e-9, "x = " + q.answer + " solves " + plain(q.html));
+  assert.ok(Math.abs(f(q.answer + 1)) > 1e-9, "unique solution");
+  return q.answer;
+}
+
+var SEEDS = 400;
+test("every template, every tier: answers re-derived independently", function () {
+  [["mental", T.MENTAL], ["linear", T.LINEAR]].forEach(function (pair) {
+    pair[1].forEach(function (tpl) {
+      assert.ok(CHECK[tpl.type], "no checker for " + tpl.type);
+      tpl.tiers.forEach(function (tier) {
+        for (var s = 1; s <= SEEDS; s++) {
+          var r = T.mulberry32(T.hashStr(tpl.type + tier + ":" + s));
+          var q = tpl.gen(r, tier, CTX);
+          q.type = tpl.type; q.tier = tier; if (q.label === undefined) q.label = "";
+          var where = tpl.type + " t" + tier + " seed " + s + ": " + plain(q.html) + " [" + plain(q.label) + "] = " + q.answer;
+          assert.ok(Number.isSafeInteger(q.answer) && Math.abs(q.answer) < 1e6, "whole answer that fits the keypad: " + where);
+          [q.prompt, q.html, q.why, q.label].forEach(function (s2) { assert.ok(!/NaN|undefined|Infinity|null|\[object/.test(s2), "bad text in " + where + ": " + s2); });
+          assert.ok(q.prompt && q.html && q.why, where);
+          var expect = CHECK[tpl.type](q);
+          assert.ok(Math.abs(expect - q.answer) < 1e-9, where + " but re-derived " + expect);
+          assert.ok(T.isRight(q, q.answer) && !T.isRight(q, null), where);
+          if (!q.check) assert.ok(!T.isRight(q, q.answer + 1) && !T.isRight(q, -q.answer - 1 || 7), where);
+          assert.ok(plain(q.why).indexOf(plain(q.answer < 0 ? M + -q.answer : String(q.answer))) >= 0, "working mentions the answer: " + where + " | " + plain(q.why));
+        }
+      });
+    });
+  });
+});
+
+/* ---------------- rounds ---------------- */
+test("daily rounds: 10 questions on the ramp, deterministic, varied", function () {
+  ["mental", "linear"].forEach(function (cat) {
+    Object.keys(T.RAMPS).forEach(function (diff) {
+      for (var d = 0; d < 60; d++) {
+        var day = T.addDays("2026-10-27", d), seed = T.dailySeed(day, cat, diff);
+        var a = T.makeRound(cat, diff, seed, CTX), b = T.makeRound(cat, diff, seed, CTX);
+        assert.strictEqual(a.length, T.ROUND);
+        a.forEach(function (q, k) {
+          assert.strictEqual(q.tier, T.RAMPS[diff][k]);
+          assert.strictEqual(q.n, k + 1);
+          assert.strictEqual(q.html, b[k].html, "same day, same questions");
+          assert.strictEqual(q.answer, b[k].answer);
+        });
+        var types = a.map(function (q) { return q.type; }), uniq = types.filter(function (t, i) { return types.indexOf(t) === i; });
+        assert.ok(uniq.length >= 9, cat + " " + diff + " " + day + " repeats: " + types);
+        if (cat === "linear") {
+          assert.strictEqual(types.filter(function (t) { return t === "x21"; }).length, 1, "one 21X hand per linear round");
+          var eqs = a.filter(function (q) { return q.fam === "eq"; }).length;
+          assert.ok(eqs >= 4 && eqs <= 6, "equations and matrices stay balanced: " + eqs);
+        }
+      }
+    });
+  });
+  var x = T.makeRound("mental", "standard", T.dailySeed("2026-10-27", "mental", "standard"), CTX);
+  var y = T.makeRound("mental", "standard", T.dailySeed("2026-10-28", "mental", "standard"), CTX);
+  assert.notDeepStrictEqual(x.map(function (q) { return q.html; }), y.map(function (q) { return q.html; }), "a new day brings new questions");
+  var noCards = T.makeRound("linear", "standard", 5, {});
+  assert.ok(noCards.every(function (q) { return q.type !== "x21"; }), "without the deck the 21X hand is left out");
+});
+
+/* ---------------- days & streaks ---------------- */
+test("days and streaks", function () {
+  assert.strictEqual(T.addDays("2026-12-31", 1), "2027-01-01");
+  assert.strictEqual(T.addDays("2028-03-01", -1), "2028-02-29");
+  assert.strictEqual(T.addDays("2026-03-29", 1), "2026-03-30", "across a DST change");
+  assert.strictEqual(T.addDays("2026-10-25", -1), "2026-10-24");
+  assert.strictEqual(T.dayKey(new Date(2026, 0, 5)), "2026-01-05");
+  var R = { score: 9 };
+  var days = { "2026-10-20": { mental: R }, "2026-10-22": { mental: R }, "2026-10-23": { linear: R }, "2026-10-24": { mental: R, linear: R }, "2026-10-26": { mental: R } };
+  assert.strictEqual(T.streak(days, "2026-10-26"), 1);
+  assert.strictEqual(T.streak(days, "2026-10-27"), 1, "today not played yet: yesterday keeps the streak alive");
+  assert.strictEqual(T.streak(days, "2026-10-28"), 0);
+  days["2026-10-25"] = { linear: R };
+  assert.strictEqual(T.streak(days, "2026-10-27"), 5);
+  assert.strictEqual(T.bestStreak(days), 5);
+  assert.strictEqual(T.streak({}, "2026-10-27"), 0);
+  assert.strictEqual(T.bestStreak({}), 0);
+  assert.strictEqual(T.streak({ "2026-10-27": {} }, "2026-10-27"), 0, "an empty day doesn't count");
+});
 
 console.log(passed + " tests passed" + (process.exitCode ? " (with failures above)" : ""));
-console.log("\nDeck statistics (random hands, greedy drawing):");
-stats("Level 1", { levels: [1] });
-stats("Levels 1-2", { levels: [1, 2] });
-stats("Core 1-3", { levels: [1, 2, 3] });
-stats("Core + Celebrity", { levels: [1, 2, 3], celebrity: true });
-stats("Everything", { levels: [1, 2, 3], celebrity: true, limited: true });
 
-var t0 = Date.now(), n = 0, ids = G.deckIds(CARDS, { levels: [1, 2, 3], celebrity: true });
-for (var s = 0; s < 200; s++) {
-  var rr = G.mulberry32(s), dk = new G.Deck(ids, rr), hh = [];
-  for (var k = 0; k < 5; k++) hh.push(CARDS[dk.draw()]);
-  G.analyze(hh, { V: 1 }); n++;
-}
-console.log("\nanalyze(): " + ((Date.now() - t0) / n).toFixed(2) + " ms per 5-card hand (X in ±1000)");
+/* ---------------- informational ---------------- */
+var t0 = Date.now(), n = 0;
+for (var s = 0; s < 200; s++) { T.makeRound("linear", "spicy", s, CTX); T.makeRound("mental", "spicy", s, CTX); n += 2; }
+console.log("\nmakeRound(): " + ((Date.now() - t0) / n).toFixed(2) + " ms per round");
+console.log("\nAnswer ranges per template (tier: min..max):");
+[T.MENTAL, T.LINEAR].forEach(function (list) {
+  list.forEach(function (tpl) {
+    console.log("  " + (tpl.type + "        ").slice(0, 9) + tpl.tiers.map(function (tier) {
+      var lo = Infinity, hi = -Infinity;
+      for (var s2 = 1; s2 <= 300; s2++) { var q = tpl.gen(T.mulberry32(s2 * 7919 + tier), tier, CTX); lo = Math.min(lo, q.answer); hi = Math.max(hi, q.answer); }
+      return "t" + tier + ": " + lo + ".." + hi;
+    }).join("   "));
+  });
+});

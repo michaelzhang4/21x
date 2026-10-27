@@ -1,6 +1,6 @@
 // Offline support for the home-screen app: network first (so updates arrive as soon
 // as you're online), falling back to the last cached copy when there's no signal.
-var CACHE = "21x-v1";
+var CACHE = "tot-v1";
 var FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 
 self.addEventListener("install", function (e) {
